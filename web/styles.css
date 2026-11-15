@@ -29,9 +29,10 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-body { min-height: 100dvh; }
+html { -webkit-text-size-adjust: 100%; }
+body { min-height: 100dvh; overflow-x: hidden; }
 
-button, input, textarea, select { font: inherit; color: inherit; }
+button, input, textarea, select { font: inherit; color: inherit; touch-action: manipulation; }
 button { cursor: pointer; }
 h1, h2, h3, p { margin: 0; }
 
@@ -40,7 +41,11 @@ h1, h2, h3, p { margin: 0; }
 .app {
   max-width: 520px;
   margin: 0 auto;
-  padding: calc(env(safe-area-inset-top) + 14px) 16px calc(104px + env(safe-area-inset-bottom));
+  padding:
+    calc(env(safe-area-inset-top) + 14px)
+    calc(16px + env(safe-area-inset-right))
+    calc(104px + env(safe-area-inset-bottom))
+    calc(16px + env(safe-area-inset-left));
 }
 
 /* 顶栏 */
@@ -332,7 +337,7 @@ textarea, input, select {
   border-radius: 10px;
   background: var(--fill);
   padding: 11px 12px;
-  font-size: 15px;
+  font-size: 16px; /* 低于 16px 时 iOS 聚焦会自动放大页面 */
   outline: none;
 }
 textarea { resize: vertical; min-height: 130px; line-height: 1.65; margin-top: 8px; }
@@ -455,6 +460,29 @@ textarea:focus, input:focus, select:focus { border-color: var(--accent); backgro
   color: #b0b0b5;
 }
 
+.result-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 30px 22px;
+  background: rgba(255, 255, 255, .55);
+  border-style: dashed;
+}
+.result-empty-ico {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+.result-empty-ico svg { width: 20px; height: 20px; }
+.result-empty .small { max-width: 260px; line-height: 1.6; }
+
 /* 底部导航 */
 .tabbar {
   position: fixed;
@@ -469,8 +497,13 @@ textarea:focus, input:focus, select:focus { border-color: var(--accent); backgro
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-top: 1px solid var(--line);
-  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  padding:
+    6px
+    calc(8px + env(safe-area-inset-right))
+    calc(6px + env(safe-area-inset-bottom))
+    calc(8px + env(safe-area-inset-left));
   z-index: 20;
+  transition: transform .2s ease;
 }
 
 .tab {
@@ -535,6 +568,121 @@ body.has-watermark .app { padding-bottom: calc(154px + env(safe-area-inset-botto
 @media (min-width: 560px) {
   .app { padding-top: 28px; }
 }
+
+/* iPhone Duo：内屏 7.6 英寸，展开后按双栏铺开，中间留空避开折痕 */
+@media (min-width: 600px) {
+  .app {
+    max-width: 760px;
+    padding-left: calc(24px + env(safe-area-inset-left));
+    padding-right: calc(24px + env(safe-area-inset-right));
+  }
+
+  #view-home {
+    display: grid;
+    grid-template-columns: minmax(0, 1.06fr) minmax(0, .94fr);
+    gap: 24px;
+    align-items: start;
+  }
+  #view-home .hero { grid-column: 1; grid-row: 1; }
+  #view-home .stat-row {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: 1fr;
+    grid-auto-rows: 1fr;
+    align-self: stretch;
+  }
+  #view-home .stat { justify-content: space-between; }
+  #view-home .block { grid-column: 1 / -1; grid-row: 2; }
+  #upcoming-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; align-items: start; }
+  #upcoming-list .empty { grid-column: 1 / -1; }
+
+  #view-analyze {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  #view-analyze > .card:first-child { grid-column: 1; grid-row: 1; }
+  #view-analyze > #analyze-result { grid-column: 2; grid-row: 1 / span 2; }
+  #view-analyze > .block { grid-column: 1; grid-row: 2; }
+
+  #reminder-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; }
+  #reminder-list > .label { grid-column: 1 / -1; }
+  #view-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+
+  .countdown { font-size: 58px; }
+  .result-summary { font-size: 14.5px; }
+
+  /* 大屏用 iPadOS 式悬浮标签栏 */
+  .tabbar {
+    max-width: 460px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 5px 10px;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, .08);
+  }
+  .toast { bottom: calc(96px + env(safe-area-inset-bottom)); }
+  body.has-watermark .tabbar { bottom: calc(62px + env(safe-area-inset-bottom)); }
+  body.has-watermark .toast { bottom: calc(146px + env(safe-area-inset-bottom)); }
+}
+
+/* 分屏或窄窗：所有双列都退回单列 */
+@media (max-width: 359px) {
+  .app {
+    padding-left: calc(12px + env(safe-area-inset-left));
+    padding-right: calc(12px + env(safe-area-inset-right));
+  }
+  .topbar h1 { font-size: 26px; }
+  .grid2 { grid-template-columns: 1fr; }
+  .stat strong { font-size: 30px; }
+  .setting-row { gap: 10px; padding: 13px 12px; }
+  .setting-ico { width: 28px; height: 28px; }
+  .date-badge { width: 38px; }
+}
+
+/* 横屏或半折：压缩纵向留白 */
+@media (orientation: landscape) and (max-height: 520px) {
+  .app { padding-top: calc(env(safe-area-inset-top) + 8px); }
+  .topbar { padding-bottom: 10px; }
+  .countdown { font-size: 40px; }
+  .hero { gap: 8px; }
+}
+
+/* 输入框聚焦时键盘弹出，先收起底部导航，避免挡住输入 */
+body.keyboard-open .tabbar { transform: translateX(-50%) translateY(115%); }
+
+/* iPhone Duo 外屏 / 横屏：导航竖排到系统右侧状态栏那一条里 */
+body.duo-rail { --duo-rail: max(env(safe-area-inset-right), 88px); }
+body.duo-rail .app {
+  max-width: 760px;
+  padding-right: calc(16px + var(--duo-rail));
+  padding-bottom: calc(30px + env(safe-area-inset-bottom));
+}
+body.duo-rail .tabbar {
+  top: auto;
+  left: auto;
+  right: calc((var(--duo-rail) - 68px) / 2);
+  bottom: calc(env(safe-area-inset-bottom) + 16px);
+  transform: none;
+  width: 68px;
+  height: auto;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .1);
+}
+body.duo-rail .tab { width: 100%; padding: 9px 0 8px; gap: 4px; }
+body.duo-rail .tab svg { width: 22px; height: 22px; }
+body.duo-rail .tab span { font-size: 10px; }
+body.duo-rail .toast { bottom: calc(34px + env(safe-area-inset-bottom)); }
+body.duo-rail.has-watermark .tabbar { bottom: calc(env(safe-area-inset-bottom) + 60px); }
+body.duo-rail.keyboard-open .tabbar { transform: translateY(130%); opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation-duration: .01ms !important; }

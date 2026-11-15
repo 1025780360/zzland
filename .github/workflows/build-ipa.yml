@@ -12,6 +12,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Select Xcode 27
+        run: |
+          if ! xcodebuild -showsdks 2>/dev/null | grep -q "iphoneos27"; then
+            latest=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | sort -V | tail -1 || true)
+            if [ -n "$latest" ]; then sudo xcode-select -s "$latest"; fi
+          fi
+          xcodebuild -version
+          xcodebuild -showsdks | grep iphoneos || true
+
       - name: Install XcodeGen
         run: brew install xcodegen
 

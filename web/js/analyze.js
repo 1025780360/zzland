@@ -249,6 +249,19 @@ function addActionReminder(result, action) {
 
 export function render() {
   renderHistory();
+  renderEmptyResult();
+}
+
+// 展开内屏时右栏是空的，给个占位说明，避免大片留白
+function renderEmptyResult() {
+  const box = $('#analyze-result');
+  if (box.children.length) return;
+  box.innerHTML = `
+    <article class="card result-empty">
+      <span class="result-empty-ico">${icons.scan}</span>
+      <p class="setting-title">分析结果</p>
+      <p class="muted small">粘贴通知后点「开始分析」，这里会列出截止时间、要做的事和错过的影响。</p>
+    </article>`;
 }
 
 function renderHistory() {

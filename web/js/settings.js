@@ -7,7 +7,7 @@ import {
 import { requestNotifyPermission, isNative, signingError } from './bridge.js';
 import { $, fmtDateTime, toast } from './utils.js';
 
-const WEB_VERSION = '2026-11-15.8';
+const WEB_VERSION = '2026-11-15.9';
 let clearArmed = false;
 
 export function init() {
