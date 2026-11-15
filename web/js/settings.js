@@ -4,11 +4,14 @@ import {
   clearAllData,
   refreshSigning,
 } from './store.js';
-import { requestNotifyPermission, isNative, signingError } from './bridge.js';
+import { requestNotifyPermission, isNative, signingError, getAppInfo, getScreenInfo } from './bridge.js';
 import { $, fmtDateTime, toast } from './utils.js';
+import { layoutInfo } from './layout.js';
 
-const WEB_VERSION = '2026-11-15.9';
+const WEB_VERSION = '2026-11-15.10';
 let clearArmed = false;
+let nativeInfo = null;
+let loadingNative = false;
 
 export function init() {
   $('#access-key').value = state.settings.apiKey || '';
@@ -57,6 +60,9 @@ export function init() {
   });
 
   render();
+
+  window.addEventListener('resize', renderScreenDiag);
+  window.addEventListener('orientationchange', () => setTimeout(renderScreenDiag, 250));
 }
 
 export function render() {
@@ -88,4 +94,34 @@ export function render() {
   $('#bridge-diag').textContent = isNative
     ? (signingError ? `原生桥已连接 · 签名读取失败：${signingError}` : '原生桥已连接 · 签名接口正常')
     : '原生桥未连接（旧安装包或页面来自缓存）';
+
+  renderScreenDiag();
+  if (!nativeInfo && !loadingNative) {
+    loadingNative = true;
+    Promise.all([getAppInfo(), getScreenInfo()]).then(([info, screen]) => {
+      nativeInfo = { info, screen };
+      loadingNative = false;
+      renderScreenDiag();
+    });
+  }
+}
+
+function renderScreenDiag() {
+  const box = $('#screen-diag');
+  if (!box) return;
+  const { w, h, dpr, insets, rail } = layoutInfo();
+  const side = rail === 'left' ? '左侧竖排' : rail === 'right' ? '右侧竖排' : '底部';
+  const lines = [
+    `视口 ${w}×${h} · ${dpr}x · 导航${side}`,
+    `安全区 上${Math.round(insets.top)} 右${Math.round(insets.right)} 下${Math.round(insets.bottom)} 左${Math.round(insets.left)}`,
+  ];
+  const screen = nativeInfo?.screen;
+  if (screen?.window && screen?.screen) {
+    lines.push(`窗口 ${screen.window.join('×')} · 屏幕 ${screen.screen.join('×')}`);
+  }
+  const info = nativeInfo?.info;
+  if (info) {
+    lines.push(`安装包 ${info.version || '-'} (${info.build || '-'}) · SDK ${info.sdk || '未标记（旧包）'}`);
+  }
+  box.textContent = lines.join('\n');
 }

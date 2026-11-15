@@ -14,12 +14,18 @@ jobs:
 
       - name: Select Xcode 27
         run: |
-          if ! xcodebuild -showsdks 2>/dev/null | grep -q "iphoneos27"; then
-            latest=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | sort -V | tail -1 || true)
-            if [ -n "$latest" ]; then sudo xcode-select -s "$latest"; fi
-          fi
+          echo "Installed Xcode:"
+          ls -d /Applications/Xcode*.app 2>/dev/null || true
+          for app in /Applications/Xcode_27*.app /Applications/Xcode-27*.app /Applications/Xcode.app; do
+            [ -d "$app" ] || continue
+            sdk=$(DEVELOPER_DIR="$app/Contents/Developer" xcrun --sdk iphoneos --show-sdk-version 2>/dev/null || echo none)
+            echo "$app -> iOS SDK $sdk"
+            case "$sdk" in
+              27.*) sudo xcode-select -s "$app"; echo "Selected $app"; break;;
+            esac
+          done
           xcodebuild -version
-          xcodebuild -showsdks | grep iphoneos || true
+          echo "Using iOS SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -31,6 +37,7 @@ jobs:
       - name: Build (unsigned)
         working-directory: ios
         run: |
+          echo "Building with iOS SDK $(xcrun --sdk iphoneos --show-sdk-version)"
           xcodebuild \
             -project CampusAssistant.xcodeproj \
             -scheme CampusAssistant \
@@ -38,6 +45,7 @@ jobs:
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -48,6 +56,13 @@ jobs:
         run: |
           APP_PATH="build/Build/Products/Release-iphoneos/CampusAssistant.app"
           test -d "$APP_PATH"
+          SDK_VERSION=$(xcrun --sdk iphoneos --show-sdk-version)
+          STAMP=$(date -u +%Y%m%d-%H%M)
+          echo "Stamp build with SDK $SDK_VERSION at $STAMP"
+          /usr/libexec/PlistBuddy -c "Delete :ZZBuildSDK" "$APP_PATH/Info.plist" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Delete :ZZBuildStamp" "$APP_PATH/Info.plist" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :ZZBuildSDK string $SDK_VERSION" "$APP_PATH/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :ZZBuildStamp string $STAMP" "$APP_PATH/Info.plist"
           rm -rf Payload CampusAssistant.ipa
           mkdir Payload
           cp -R "$APP_PATH" Payload/

@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import WebKit
 import UserNotifications
 
@@ -81,9 +82,28 @@ final class Bridge: NSObject, WKScriptMessageHandler {
             reply(id: id, ok: true, data: true)
 
         case "app.info":
+            let info = Bundle.main.infoDictionary
             reply(id: id, ok: true, data: [
-                "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0",
-                "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0",
+                "version": info?["CFBundleShortVersionString"] as? String ?? "0",
+                "build": info?["CFBundleVersion"] as? String ?? "0",
+                "sdk": info?["ZZBuildSDK"] as? String ?? "",
+                "stamp": info?["ZZBuildStamp"] as? String ?? "",
+            ])
+
+        case "app.screen":
+            let screen = webView?.window?.screen ?? UIScreen.main
+            let window = webView?.window?.bounds ?? screen.bounds
+            let web = webView?.bounds ?? .zero
+            let safe = webView?.safeAreaInsets ?? .zero
+            reply(id: id, ok: true, data: [
+                "screen": [Int(screen.bounds.width.rounded()), Int(screen.bounds.height.rounded())],
+                "window": [Int(window.width.rounded()), Int(window.height.rounded())],
+                "web": [Int(web.width.rounded()), Int(web.height.rounded())],
+                "safeTop": Double(safe.top),
+                "safeRight": Double(safe.right),
+                "safeBottom": Double(safe.bottom),
+                "safeLeft": Double(safe.left),
+                "scale": Double(screen.scale),
             ])
 
         case "app.reload":

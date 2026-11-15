@@ -152,3 +152,12 @@ export async function getAppInfo() {
     return { version: 'unknown' };
   }
 }
+
+export async function getScreenInfo() {
+  if (!isNative) return null;
+  try {
+    return await nativeCall('app.screen');
+  } catch {
+    return null;
+  }
+}

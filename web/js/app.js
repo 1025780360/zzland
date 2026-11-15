@@ -4,6 +4,8 @@ import * as analyze from './analyze.js';
 import * as reminders from './reminders.js';
 import * as settings from './settings.js';
 import { $, $$ } from './utils.js';
+import { watchLayout, applyNativeScreen } from './layout.js';
+import { getScreenInfo } from './bridge.js';
 
 const views = { home, analyze, reminders, settings };
 
@@ -53,22 +55,6 @@ function watchKeyboard() {
   });
 }
 
-// iPhone Duo：外屏和横屏时系统把状态栏、标签栏放到右侧竖条里，页面跟着把导航竖排
-function watchDuo() {
-  const apply = () => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const ratio = w / h;
-    const duoOuter = h >= w
-      ? w >= 380 && w <= 560 && ratio >= 0.64
-      : w >= 560 && w <= 980 && h <= 640 && ratio <= 1.6;
-    document.body.classList.toggle('duo-rail', duoOuter);
-  };
-  apply();
-  window.addEventListener('resize', apply);
-  window.addEventListener('orientationchange', () => setTimeout(apply, 200));
-}
-
 function watchWatermark() {
   const apply = () => {
     const host = document.getElementById('qoder-sites-watermark');
@@ -89,7 +75,8 @@ function watchWatermark() {
 async function main() {
   await loadState();
   watchKeyboard();
-  watchDuo();
+  watchLayout();
+  getScreenInfo().then(applyNativeScreen);
   watchWatermark();
   bindNav();
   home.init({ navigate });

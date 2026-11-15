@@ -106,6 +106,11 @@ h1, h2, h3, p { margin: 0; }
 
 .muted { color: var(--muted); }
 .small { font-size: 12.5px; line-height: 1.5; }
+.diag {
+  white-space: pre-line;
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
 .label { font-size: 13px; font-weight: 600; color: var(--muted-strong); }
 
 /* 标签 */
@@ -652,17 +657,19 @@ body.has-watermark .app { padding-bottom: calc(154px + env(safe-area-inset-botto
 /* 输入框聚焦时键盘弹出，先收起底部导航，避免挡住输入 */
 body.keyboard-open .tabbar { transform: translateX(-50%) translateY(115%); }
 
-/* iPhone Duo 外屏 / 横屏：导航竖排到系统右侧状态栏那一条里 */
+/* iPhone Duo 外屏 / 横屏：导航竖排到系统侧边状态栏那一条里 */
 body.duo-rail { --duo-rail: max(env(safe-area-inset-right), 88px); }
-body.duo-rail .app {
+body.duo-rail-left { --duo-rail: max(env(safe-area-inset-left), 88px); }
+body.duo-rail .app,
+body.duo-rail-left .app {
   max-width: 760px;
-  padding-right: calc(16px + var(--duo-rail));
   padding-bottom: calc(30px + env(safe-area-inset-bottom));
 }
-body.duo-rail .tabbar {
+body.duo-rail .app { padding-right: calc(16px + var(--duo-rail)); }
+body.duo-rail-left .app { padding-left: calc(16px + var(--duo-rail)); }
+body.duo-rail .tabbar,
+body.duo-rail-left .tabbar {
   top: auto;
-  left: auto;
-  right: calc((var(--duo-rail) - 68px) / 2);
   bottom: calc(env(safe-area-inset-bottom) + 16px);
   transform: none;
   width: 68px;
@@ -677,12 +684,26 @@ body.duo-rail .tabbar {
   background: rgba(255, 255, 255, .96);
   box-shadow: 0 10px 28px rgba(0, 0, 0, .1);
 }
-body.duo-rail .tab { width: 100%; padding: 9px 0 8px; gap: 4px; }
-body.duo-rail .tab svg { width: 22px; height: 22px; }
-body.duo-rail .tab span { font-size: 10px; }
-body.duo-rail .toast { bottom: calc(34px + env(safe-area-inset-bottom)); }
-body.duo-rail.has-watermark .tabbar { bottom: calc(env(safe-area-inset-bottom) + 60px); }
-body.duo-rail.keyboard-open .tabbar { transform: translateY(130%); opacity: 0; }
+body.duo-rail .tabbar {
+  left: auto;
+  right: calc((var(--duo-rail) - 68px) / 2);
+}
+body.duo-rail-left .tabbar {
+  right: auto;
+  left: calc((var(--duo-rail) - 68px) / 2);
+}
+body.duo-rail .tab,
+body.duo-rail-left .tab { width: 100%; padding: 9px 0 8px; gap: 4px; }
+body.duo-rail .tab svg,
+body.duo-rail-left .tab svg { width: 22px; height: 22px; }
+body.duo-rail .tab span,
+body.duo-rail-left .tab span { font-size: 10px; }
+body.duo-rail .toast,
+body.duo-rail-left .toast { bottom: calc(34px + env(safe-area-inset-bottom)); }
+body.duo-rail.has-watermark .tabbar,
+body.duo-rail-left.has-watermark .tabbar { bottom: calc(env(safe-area-inset-bottom) + 60px); }
+body.duo-rail.keyboard-open .tabbar,
+body.duo-rail-left.keyboard-open .tabbar { transform: translateY(130%); opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation-duration: .01ms !important; }
