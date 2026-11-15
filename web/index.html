@@ -35,21 +35,16 @@
       <section class="view" id="view-home" data-title="今天">
         <article class="card hero">
           <div class="hero-top">
-            <span class="hero-label">自签有效期</span>
+            <div class="hero-id">
+              <img class="mascot" src="assets/mascot.png" alt="" width="56" height="56">
+              <div>
+                <h1 id="greeting">你好</h1>
+              </div>
+            </div>
             <span class="chip" id="signing-chip">读取中</span>
           </div>
-          <p class="countdown" id="countdown">--</p>
-          <p class="hero-line" id="expiry-line">正在读取签名信息…</p>
-          <div class="meter"><span id="signing-meter"></span></div>
-          <p class="tip" id="signing-tip"></p>
-          <details class="steps">
-            <summary>到期后怎么续签？</summary>
-            <ol>
-              <li>电脑打开 Sideloadly，iPhone 用数据线连电脑。</li>
-              <li>把同一个 IPA 拖进 Sideloadly，输入 Apple ID 重新签名安装。</li>
-              <li>覆盖安装即可，本机数据不会丢。免费账号 7 天后需要再续一次。</li>
-            </ol>
-          </details>
+          <p class="quote" id="quote"></p>
+          <p class="signing-line" id="expiry-line">正在读取签名信息…</p>
         </article>
 
         <div class="stat-row">
