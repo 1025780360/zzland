@@ -125,6 +125,11 @@ svg { stroke-width: 1.5; }
 /* 通用视图 */
 .view { display: flex; flex-direction: column; gap: 16px; }
 .view[hidden] { display: none; }
+.view:not([hidden]) { animation: view-in 220ms var(--ease) both; }
+@keyframes view-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
 
 .card {
   background: var(--card);
@@ -187,6 +192,10 @@ svg { stroke-width: 1.5; }
 
 .quote { font-size: 14px; line-height: 1.75; color: var(--ink-2); }
 .quote cite { display: block; margin-top: 2px; font-size: 12px; font-style: normal; color: var(--muted); }
+.quote.quote-in { animation: quote-in 240ms var(--ease); }
+@keyframes quote-in {
+  from { opacity: 0; transform: translateY(3px); }
+}
 
 .signing-line { font-size: 12px; line-height: 1.6; color: var(--muted); font-variant-numeric: tabular-nums; }
 
@@ -271,8 +280,9 @@ svg { stroke-width: 1.5; }
   place-items: center;
   color: transparent;
   margin-top: 2px;
-  transition: background-color 150ms var(--ease), border-color 150ms var(--ease), color 150ms var(--ease);
+  transition: background-color 150ms var(--ease), border-color 150ms var(--ease), color 150ms var(--ease), transform 120ms var(--ease);
 }
+.check:active { transform: scale(.88); }
 .check svg { width: 14px; height: 14px; }
 .check.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
@@ -299,7 +309,7 @@ svg { stroke-width: 1.5; }
   font-size: 15px;
   font-weight: 500;
   line-height: 1.2;
-  transition: background-color 150ms var(--ease), opacity 150ms var(--ease);
+  transition: background-color 150ms var(--ease), opacity 150ms var(--ease), transform 120ms var(--ease);
 }
 .primary {
   background: var(--accent);
@@ -309,7 +319,7 @@ svg { stroke-width: 1.5; }
 .primary svg { width: 16px; height: 16px; }
 .primary.small { padding: 7px 12px; font-size: 13px; }
 .primary[disabled] { opacity: .55; }
-.primary:active { background: var(--accent-ink); }
+.primary:active { background: var(--accent-ink); transform: scale(.98); }
 .ghost-btn {
   background: var(--card);
   border-color: var(--line);
@@ -633,8 +643,9 @@ textarea:focus, input:focus, select:focus { border-color: var(--accent); backgro
   font-size: 11px;
   font-weight: 500;
 }
-.tab svg { width: 22px; height: 22px; }
+.tab svg { width: 22px; height: 22px; transition: transform 140ms var(--ease); }
 .tab:active { background: var(--raised); }
+.tab:active svg { transform: scale(.9); }
 .tab.active { color: var(--accent); }
 
 /* 提示 */

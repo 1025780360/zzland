@@ -47,7 +47,11 @@ export function init(options = {}) {
 }
 
 function renderQuote(text, cite) {
-  $('#quote').innerHTML = `「${escapeHtml(text)}」${cite ? `<cite>— ${escapeHtml(cite)}</cite>` : ''}`;
+  const el = $('#quote');
+  el.innerHTML = `「${escapeHtml(text)}」${cite ? `<cite>— ${escapeHtml(cite)}</cite>` : ''}`;
+  el.classList.remove('quote-in');
+  void el.offsetWidth; // 重新触发淡入
+  el.classList.add('quote-in');
 }
 
 // 一言接口无 Key、允许跨域；断网时退回本地名言
