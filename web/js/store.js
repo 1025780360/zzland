@@ -1,4 +1,5 @@
 import {
+  isNative,
   readStore,
   writeStore,
   getSigningInfo,
@@ -40,8 +41,47 @@ export async function loadState() {
   state.settings = { ...(settings || {}), apiKey: apiKey || '' };
   state.signing = signing || null;
   state.notifyStatus = notifyStatus;
+  await adoptLocalData();
   await syncNotifications();
   notifyChange();
+}
+
+// 旧安装包的桥没生效，数据落在 localStorage；新壳第一次启动时搬进原生存储
+async function adoptLocalData() {
+  if (!isNative) return;
+  const localList = (key) => {
+    try {
+      const raw = localStorage.getItem(`zzland:${key}`);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+  const localReminders = localList('reminders');
+  const localAnalyses = localList('analyses');
+  const localKey = localStorage.getItem('zzland-secret:deepseekKey');
+
+  try {
+    if (!state.reminders.length && Array.isArray(localReminders) && localReminders.length) {
+      state.reminders = localReminders;
+      await writeStore('reminders', state.reminders);
+    }
+    if (!state.analyses.length && Array.isArray(localAnalyses) && localAnalyses.length) {
+      state.analyses = localAnalyses;
+      await writeStore('analyses', state.analyses);
+    }
+    if (!state.settings.apiKey && localKey) {
+      state.settings.apiKey = localKey;
+      await writeSecret('deepseekKey', localKey);
+    }
+  } catch {
+    return; // 原生写入失败就保留本地副本，下次启动再搬
+  }
+
+  localStorage.removeItem('zzland:reminders');
+  localStorage.removeItem('zzland:analyses');
+  localStorage.removeItem('zzland:settings');
+  localStorage.removeItem('zzland-secret:deepseekKey');
 }
 
 async function persistReminders() {
