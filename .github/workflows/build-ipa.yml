@@ -7,25 +7,20 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: xcode-27
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select Xcode 27
+      - name: Check iOS SDK
         run: |
-          echo "Installed Xcode:"
-          ls -d /Applications/Xcode*.app 2>/dev/null || true
-          for app in /Applications/Xcode_27*.app /Applications/Xcode-27*.app /Applications/Xcode.app; do
-            [ -d "$app" ] || continue
-            sdk=$(DEVELOPER_DIR="$app/Contents/Developer" xcrun --sdk iphoneos --show-sdk-version 2>/dev/null || echo none)
-            echo "$app -> iOS SDK $sdk"
-            case "$sdk" in
-              27.*) sudo xcode-select -s "$app"; echo "Selected $app"; break;;
-            esac
-          done
           xcodebuild -version
-          echo "Using iOS SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
+          SDK=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "Using iOS SDK: $SDK"
+          case "$SDK" in
+            27.*) ;;
+            *) echo "::error::需要 iOS 27 SDK 才能让 Duo 铺满屏幕，当前是 $SDK"; exit 1;;
+          esac
 
       - name: Install XcodeGen
         run: brew install xcodegen
