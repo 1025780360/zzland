@@ -6,17 +6,24 @@ final class WebController: NSObject, ObservableObject, WKNavigationDelegate {
     @Published var isLoading = true
 
     let webView: WKWebView
-    private let bridge = Bridge()
+    private let bridge: Bridge
     private var didStart = false
 
     override init() {
+        let bridge = Bridge()
         let configuration = WKWebViewConfiguration()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         configuration.allowsInlineMediaPlayback = true
-        webView = WKWebView(frame: .zero, configuration: configuration)
+        // 消息处理器必须在 WKWebView 初始化前挂好，建好之后再改配置不会生效
+        configuration.userContentController.add(bridge, name: "zzland")
+
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+
+        self.bridge = bridge
+        self.webView = webView
+
         super.init()
 
-        configuration.userContentController.add(bridge, name: "zzland")
         bridge.webView = webView
         webView.navigationDelegate = self
         webView.allowsBackForwardNavigationGestures = false

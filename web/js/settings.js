@@ -6,7 +6,7 @@ import {
 import { requestNotifyPermission, isNative } from './bridge.js';
 import { $, fmtDateTime, toast } from './utils.js';
 
-const WEB_VERSION = '2026-11-15.3';
+const WEB_VERSION = '2026-11-15.4';
 let clearArmed = false;
 
 export function init() {
@@ -73,6 +73,8 @@ export function render() {
       : '没有读取到证书文件，按首次打开时间加 7 天估算。';
   } else {
     $('#settings-expiry').textContent = '未知';
-    $('#settings-signing-source').textContent = '浏览器预览读不到签名信息，安装到 iPhone 后才会显示。';
+    $('#settings-signing-source').textContent = isNative
+      ? 'App 内没有读到证书文件，重启一次再看；仍然是「未知」就用 Sideloadly 重新签一次。'
+      : '浏览器预览读不到签名信息，安装到 iPhone 后才会显示。';
   }
 }

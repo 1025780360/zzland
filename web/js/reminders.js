@@ -68,7 +68,11 @@ export function render() {
 
   const items = sortedReminders();
   if (!items.length) {
-    $('#reminder-list').innerHTML = '<div class="empty">还没有提醒。<br>点右上角「新增」，或从通知分析结果里加入。</div>';
+    $('#reminder-list').innerHTML = `
+      <div class="empty">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6zM9 9h6M9 13h4"/></svg>
+        还没有提醒。<br>点右上角「新增」，或从通知分析结果里加入。
+      </div>`;
     return;
   }
 

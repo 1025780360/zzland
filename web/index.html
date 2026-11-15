@@ -15,21 +15,27 @@
         <div>
           <p class="eyebrow">CAMPUS ASSISTANT</p>
           <h1 id="page-title">今天</h1>
+          <p class="today-line" id="today-line"></p>
         </div>
       </div>
-      <button class="ghost-btn" id="refresh-btn" type="button">刷新</button>
+      <button class="icon-btn" id="refresh-btn" type="button" aria-label="刷新界面">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2.5L7.5 6 12 9.5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>
+      </button>
     </header>
 
     <main>
       <!-- 首页：自签倒计时 + 最近截止 -->
       <section class="view" id="view-home" data-title="今天">
-        <article class="card signing">
-          <div class="row between">
-            <span class="label">自签有效期</span>
+        <article class="card hero">
+          <div class="hero-top">
+            <span class="hero-label">自签有效期</span>
             <span class="chip" id="signing-chip">读取中</span>
           </div>
-          <p class="countdown" id="countdown">--</p>
-          <p class="muted" id="expiry-line">正在读取签名信息…</p>
+          <div class="hero-main">
+            <p class="countdown" id="countdown">--</p>
+            <div class="ring" id="signing-ring"><span id="ring-label">—</span></div>
+          </div>
+          <p class="hero-line" id="expiry-line">正在读取签名信息…</p>
           <div class="meter"><span id="signing-meter"></span></div>
           <p class="tip" id="signing-tip"></p>
           <details class="steps">
@@ -43,8 +49,16 @@
         </article>
 
         <div class="stat-row">
-          <div class="card stat"><span>待办</span><strong id="stat-open">0</strong></div>
-          <div class="card stat"><span>今天截止</span><strong id="stat-today">0</strong></div>
+          <button class="card stat" type="button" data-goto="reminders">
+            <span class="stat-label">待办</span>
+            <strong id="stat-open">0</strong>
+            <svg class="stat-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5 15.5 12 9 18.5"/></svg>
+          </button>
+          <button class="card stat" type="button" data-goto="reminders">
+            <span class="stat-label">今天截止</span>
+            <strong id="stat-today">0</strong>
+            <svg class="stat-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5 15.5 12 9 18.5"/></svg>
+          </button>
         </div>
 
         <section class="block">
@@ -58,13 +72,16 @@
 
       <!-- 通知分析 -->
       <section class="view" id="view-analyze" data-title="通知分析" hidden>
-        <article class="card">
-          <label class="label" for="notice-text">粘贴学校通知</label>
-          <textarea id="notice-text" rows="7" placeholder="把群通知、教务公告原文粘进来。带上时间、地点、材料等信息，分析会更准。"></textarea>
-          <div class="row between">
+        <article class="card composer">
+          <div class="composer-head">
+            <label class="label" for="notice-text">粘贴学校通知</label>
             <span class="muted small" id="text-count">0 字</span>
-            <button class="primary" id="analyze-btn" type="button">开始分析</button>
           </div>
+          <textarea id="notice-text" rows="7" placeholder="把群通知、教务公告原文粘进来。带上时间、地点、材料等信息，分析会更准。"></textarea>
+          <button class="primary block-btn" id="analyze-btn" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>
+            开始分析
+          </button>
         </article>
 
         <div id="analyze-result"></div>
@@ -79,7 +96,7 @@
       <section class="view" id="view-reminders" data-title="提醒事项" hidden>
         <div class="block-head">
           <p class="muted" id="reminder-summary">0 项待办</p>
-          <button class="primary" id="add-reminder-btn" type="button">新增</button>
+          <button class="primary small" id="add-reminder-btn" type="button">新增</button>
         </div>
 
         <form class="card form" id="reminder-form" hidden>
@@ -106,6 +123,7 @@
 
       <!-- 设置 -->
       <section class="view" id="view-settings" data-title="设置" hidden>
+        <p class="section-label">AI 分析</p>
         <article class="card">
           <label class="label" for="access-key">DeepSeek API Key</label>
           <input id="access-key" type="password" autocomplete="off" placeholder="sk-...">
@@ -115,6 +133,7 @@
           </div>
         </article>
 
+        <p class="section-label">系统</p>
         <article class="card">
           <div class="row between">
             <span>通知权限</span>
@@ -140,6 +159,7 @@
     </main>
 
     <nav class="tabbar" aria-label="主导航">
+      <span class="tab-ink" id="tab-ink" aria-hidden="true"></span>
       <button class="tab active" data-view="home" type="button">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20h-6v-5h-4v5H4z"/></svg>
         <span>今天</span>

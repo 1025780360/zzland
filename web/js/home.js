@@ -1,5 +1,6 @@
 import { state, openReminders } from './store.js';
-import { $, escapeHtml, fmtDateTime, dueLabel, startOfDay, pluralDays } from './utils.js';
+import { isNative } from './bridge.js';
+import { $, $$, escapeHtml, fmtDateTime, dueLabel, startOfDay, pluralDays } from './utils.js';
 
 let navigateTo = () => {};
 let timer = 0;
@@ -7,6 +8,12 @@ let timer = 0;
 export function init(options = {}) {
   navigateTo = options.navigate || navigateTo;
   $('#go-reminders').addEventListener('click', () => navigateTo('reminders'));
+  $$('[data-goto]').forEach((node) => {
+    node.addEventListener('click', () => navigateTo(node.dataset.goto));
+  });
+  const now = new Date();
+  const week = ['日', '一', '二', '三', '四', '五', '六'][now.getDay()];
+  $('#today-line').textContent = `${now.getMonth() + 1} 月 ${now.getDate()} 日 · 周${week}`;
   render();
   clearInterval(timer);
   timer = setInterval(renderSigning, 30000);
@@ -24,16 +31,25 @@ function renderSigning() {
   const line = $('#expiry-line');
   const meter = $('#signing-meter');
   const tip = $('#signing-tip');
+  const ring = $('#signing-ring');
+  const ringLabel = $('#ring-label');
   const info = state.signing;
 
   if (!info?.expiresAt) {
     chip.className = 'chip';
     chip.textContent = '未读取';
     countdown.textContent = '—';
-    line.textContent = '签名信息只在 iPhone App 内可读取，浏览器预览时不可用。';
+    line.textContent = isNative
+      ? '没有读到 App 包内的证书文件，重启一次 App 再试。'
+      : '签名信息只在 iPhone App 内可读取，浏览器预览时不可用。';
     meter.style.width = '0%';
     meter.className = '';
-    tip.textContent = '安装到手机后，这里会显示真实的证书到期时间。';
+    ring.className = 'ring off';
+    ring.style.setProperty('--p', '0');
+    ringLabel.textContent = '—';
+    tip.textContent = isNative
+      ? '如果一直读不到，说明这次签名没有写入描述文件，用 Sideloadly 重新签一次即可。'
+      : '安装到手机后，这里会显示真实的证书到期时间。';
     return;
   }
 
@@ -48,6 +64,9 @@ function renderSigning() {
     line.textContent = `${fmtDateTime(info.expiresAt)} 已到期`;
     meter.style.width = '0%';
     meter.className = 'danger';
+    ring.className = 'ring danger';
+    ring.style.setProperty('--p', '0');
+    ringLabel.textContent = '0%';
     tip.textContent = '证书已过期，App 需要连接电脑重新签名安装才能打开。';
     return;
   }
@@ -60,22 +79,28 @@ function renderSigning() {
   const installed = info.installedAt ? new Date(info.installedAt).getTime() : NaN;
   const total = Number.isFinite(installed) && installed < expires ? expires - installed : 7 * 86400000;
   const ratio = Math.max(0, Math.min(1, remain / total));
-  meter.style.width = `${Math.round(ratio * 100)}%`;
+  const percent = Math.round(ratio * 100);
+  meter.style.width = `${percent}%`;
+  ring.style.setProperty('--p', String(percent));
+  ringLabel.textContent = `${percent}%`;
 
   if (hoursTotal <= 24) {
     chip.className = 'chip danger';
     chip.textContent = '紧急';
     meter.className = 'danger';
+    ring.className = 'ring danger';
     tip.textContent = '不到 24 小时，今天务必连接电脑用 Sideloadly 续签。';
   } else if (hoursTotal <= 72) {
     chip.className = 'chip warn';
     chip.textContent = '注意';
     meter.className = 'warn';
+    ring.className = 'ring warn';
     tip.textContent = '建议这两天找时间续签，过期后 App 将无法打开。';
   } else {
     chip.className = 'chip ok';
     chip.textContent = '正常';
     meter.className = '';
+    ring.className = 'ring';
     tip.textContent = '状态正常。到期前 3 天和 12 小时会发本地提醒。';
   }
 
@@ -94,15 +119,25 @@ function renderUpcoming() {
   const list = $('#upcoming-list');
   const items = openReminders().filter((item) => item.due).slice(0, 4);
   if (!items.length) {
-    list.innerHTML = '<div class="empty">暂无待办。<br>把通知粘贴到「分析」，或到「提醒」里手动新增。</div>';
+    list.innerHTML = `
+      <div class="empty">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14M5 12h9M5 16h6"/></svg>
+        暂无待办。<br>把通知粘贴到「分析」，或到「提醒」里手动新增。
+      </div>`;
     return;
   }
   const now = Date.now();
+  const todayStart = startOfDay().getTime();
   list.innerHTML = items.map((item) => {
-    const overdue = new Date(item.due).getTime() < now;
+    const due = new Date(item.due);
+    const overdue = due.getTime() < now;
+    const isToday = startOfDay(due).getTime() === todayStart;
     return `
       <div class="item">
-        <span class="dot ${overdue ? 'overdue' : item.priority}"></span>
+        <div class="date-badge ${overdue ? 'overdue' : ''}">
+          <b>${due.getDate()}</b>
+          <span>${isToday ? '今天' : `${due.getMonth() + 1} 月`}</span>
+        </div>
         <div class="item-main">
           <p class="item-title">${escapeHtml(item.title)}</p>
           <p class="item-sub"><span>${overdue ? '已逾期 · ' : ''}${escapeHtml(dueLabel(item.due))}</span></p>

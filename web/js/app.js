@@ -19,8 +19,21 @@ function navigate(name) {
   });
   const section = $(`#view-${name}`);
   $('#page-title').textContent = section?.dataset.title || '校园助手';
+  $('#today-line').hidden = name !== 'home';
+  section.classList.remove('enter');
+  void section.offsetWidth;
+  section.classList.add('enter');
+  moveTabInk(name);
   window.scrollTo({ top: 0, behavior: 'instant' });
   renderAll();
+}
+
+function moveTabInk(name) {
+  const ink = $('#tab-ink');
+  const tab = $(`.tab[data-view="${name}"]`);
+  if (!ink || !tab) return;
+  ink.style.width = `${tab.offsetWidth}px`;
+  ink.style.transform = `translateX(${tab.offsetLeft}px)`;
 }
 
 function renderAll() {
@@ -31,9 +44,15 @@ function bindNav() {
   $$('.tab').forEach((tab) => {
     tab.addEventListener('click', () => navigate(tab.dataset.view));
   });
-  $('#refresh-btn').addEventListener('click', () => {
-    location.replace(`${location.pathname}?v=${Date.now()}`);
+  $('#refresh-btn').addEventListener('click', (event) => {
+    const button = event.currentTarget;
+    if (button.classList.contains('spin')) return;
+    button.classList.add('spin');
+    setTimeout(() => {
+      location.replace(`${location.pathname}?v=${Date.now()}`);
+    }, 420);
   });
+  window.addEventListener('resize', () => moveTabInk(current));
 }
 
 function watchWatermark() {

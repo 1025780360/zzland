@@ -19,6 +19,11 @@ enum SigningInfo {
               let data = try? Data(contentsOf: url) else {
             return nil
         }
+        if let expiration = plistExpiration(data) { return expiration }
+        return scannedExpiration(data)
+    }
+
+    private static func plistExpiration(_ data: Data) -> Date? {
         let startTag = Data("<?xml".utf8)
         let endTag = Data("</plist>".utf8)
         guard let start = data.range(of: startTag),
@@ -31,6 +36,26 @@ enum SigningInfo {
             return nil
         }
         return expiration
+    }
+
+    // 描述文件外面套了 CMS 签名，偶尔整段解析失败，直接按文本找日期兜底
+    private static func scannedExpiration(_ data: Data) -> Date? {
+        guard let text = String(data: data, encoding: .isoLatin1),
+              let keyRange = text.range(of: "ExpirationDate</key>") else {
+            return nil
+        }
+        let tail = text[keyRange.upperBound...]
+        guard let open = tail.range(of: "<date>"),
+              let close = tail.range(of: "</date>"),
+              open.upperBound <= close.lowerBound else {
+            return nil
+        }
+        let stamp = String(tail[open.upperBound..<close.lowerBound])
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: stamp) { return date }
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: stamp)
     }
 
     /// 优先用证书里的到期时间；读不到时按首次打开时间加 7 天估算。

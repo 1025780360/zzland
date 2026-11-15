@@ -29,7 +29,8 @@ function onResultClick(event) {
     const action = renderedResult.actions[Number(addOne.dataset.addAction)];
     if (action) {
       addActionReminder(renderedResult, action);
-      addOne.textContent = '已加入';
+      addOne.textContent = '✓';
+      addOne.classList.add('done');
       addOne.disabled = true;
     }
     return;
@@ -80,6 +81,8 @@ function validDate(value) {
 const USE_MOCK = ['127.0.0.1', 'localhost'].includes(location.hostname)
   && new URLSearchParams(location.search).has('mock');
 
+const ANALYZE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>';
+
 async function analyze() {
   const text = $('#notice-text').value.trim();
   if (text.length < 10) {
@@ -94,7 +97,7 @@ async function analyze() {
 
   const button = $('#analyze-btn');
   button.disabled = true;
-  button.textContent = '分析中…';
+  button.innerHTML = '<span class="spinner"></span>分析中…';
   $('#analyze-result').innerHTML = `
     <article class="card"><div class="loading"><span class="spinner"></span>正在阅读通知，提取截止时间和待办…</div></article>`;
 
@@ -112,7 +115,7 @@ async function analyze() {
     toast(message);
   } finally {
     button.disabled = false;
-    button.textContent = '开始分析';
+    button.innerHTML = `${ANALYZE_ICON}开始分析`;
   }
 }
 
@@ -205,14 +208,14 @@ function renderResult(result) {
         ${escapeHtml(action.text)}
         ${action.due ? `<span class="tag">${escapeHtml(fmtDateTime(action.due))}</span>` : ''}
       </div>
-      <button class="mini" type="button" data-add-action="${index}">加入提醒</button>
+      <button class="add-btn" type="button" data-add-action="${index}" aria-label="加入提醒">＋</button>
     </div>`).join('');
 
   const meta = [
-    result.importance_reason ? `<div><b>为什么</b>：${escapeHtml(result.importance_reason)}</div>` : '',
-    result.deadline ? `<div><b>截止</b>：${escapeHtml(fmtDateTime(result.deadline))}${result.deadline_text ? `（原文：${escapeHtml(result.deadline_text)}）` : ''}</div>` : '',
-    result.audience ? `<div><b>对象</b>：${escapeHtml(result.audience)}</div>` : '',
-    result.location ? `<div><b>地点</b>：${escapeHtml(result.location)}</div>` : '',
+    result.importance_reason ? `<div class="meta-row"><b>为什么</b><span>${escapeHtml(result.importance_reason)}</span></div>` : '',
+    result.deadline ? `<div class="meta-row"><b>截止</b><span>${escapeHtml(fmtDateTime(result.deadline))}${result.deadline_text ? `（原文：${escapeHtml(result.deadline_text)}）` : ''}</span></div>` : '',
+    result.audience ? `<div class="meta-row"><b>对象</b><span>${escapeHtml(result.audience)}</span></div>` : '',
+    result.location ? `<div class="meta-row"><b>地点</b><span>${escapeHtml(result.location)}</span></div>` : '',
   ].filter(Boolean).join('');
 
   $('#analyze-result').innerHTML = `
@@ -226,10 +229,10 @@ function renderResult(result) {
       </div>
       ${result.summary ? `<p class="result-summary">${escapeHtml(result.summary)}</p>` : ''}
       ${meta ? `<div class="meta">${meta}</div>` : ''}
-      ${actions ? `<div><p class="label" style="margin-bottom:8px">需要做的事</p>${actions}</div>` : ''}
+      ${actions ? `<div><p class="label" style="margin-bottom:6px">需要做的事</p>${actions}</div>` : ''}
       ${result.materials.length ? `<div><p class="label" style="margin-bottom:6px">准备材料</p><div class="tags">${result.materials.map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join('')}</div></div>` : ''}
-      ${result.risks.length ? `<div><p class="label" style="margin-bottom:6px">错过的影响</p>${result.risks.map((item) => `<p class="muted small">· ${escapeHtml(item)}</p>`).join('')}</div>` : ''}
-      ${result.actions.length ? `<button class="primary" id="add-all-actions" type="button">全部加入提醒（${result.actions.length}）</button>` : ''}
+      ${result.risks.length ? `<div><p class="label" style="margin-bottom:6px">错过的影响</p>${result.risks.map((item) => `<p class="risk">· ${escapeHtml(item)}</p>`).join('')}</div>` : ''}
+      ${result.actions.length ? `<button class="primary block-btn" id="add-all-actions" type="button">全部加入提醒（${result.actions.length}）</button>` : ''}
     </article>`;
 }
 
@@ -250,7 +253,11 @@ export function render() {
 function renderHistory() {
   const list = $('#history-list');
   if (!state.analyses.length) {
-    list.innerHTML = '<div class="empty">还没有分析记录。粘贴一条通知试试。</div>';
+    list.innerHTML = `
+      <div class="empty">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5zM8 9h8M8 13h5"/></svg>
+        还没有分析记录。粘贴一条通知试试。
+      </div>`;
     return;
   }
   list.innerHTML = state.analyses.map((entry) => {
