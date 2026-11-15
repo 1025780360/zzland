@@ -81,11 +81,19 @@ export async function writeSecret(name, value) {
   else localStorage.removeItem(`zzland-secret:${name}`);
 }
 
+export let signingError = '';
+
 export async function getSigningInfo() {
-  if (!isNative) return null;
+  if (!isNative) {
+    signingError = '没有原生桥';
+    return null;
+  }
   try {
-    return await nativeCall('signing.info');
-  } catch {
+    const info = await nativeCall('signing.info');
+    signingError = info?.expiresAt ? '' : '原生返回为空';
+    return info;
+  } catch (error) {
+    signingError = error.message || '原生调用失败';
     return null;
   }
 }

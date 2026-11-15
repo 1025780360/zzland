@@ -41,7 +41,7 @@ function renderSigning() {
     countdown.textContent = '—';
     line.textContent = isNative
       ? '没有读到 App 包内的证书文件，重启一次 App 再试。'
-      : '签名信息只在 iPhone App 内可读取，浏览器预览时不可用。';
+      : '没检测到原生桥：浏览器预览读不到签名；如果这是在 App 里，说明装的是旧安装包。';
     meter.style.width = '0%';
     meter.className = '';
     ring.className = 'ring off';
@@ -49,7 +49,7 @@ function renderSigning() {
     ringLabel.textContent = '—';
     tip.textContent = isNative
       ? '如果一直读不到，说明这次签名没有写入描述文件，用 Sideloadly 重新签一次即可。'
-      : '安装到手机后，这里会显示真实的证书到期时间。';
+      : '重新安装最新 IPA（带原生桥的版本）后，这里会显示真实到期时间。';
     return;
   }
 

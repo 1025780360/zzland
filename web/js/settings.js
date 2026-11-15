@@ -2,11 +2,12 @@ import {
   state,
   saveApiKey,
   clearAllData,
+  refreshSigning,
 } from './store.js';
-import { requestNotifyPermission, isNative } from './bridge.js';
+import { requestNotifyPermission, isNative, signingError } from './bridge.js';
 import { $, fmtDateTime, toast } from './utils.js';
 
-const WEB_VERSION = '2026-11-15.5';
+const WEB_VERSION = '2026-11-15.6';
 let clearArmed = false;
 
 export function init() {
@@ -28,6 +29,12 @@ export function init() {
 
   $('#reload-web').addEventListener('click', () => {
     location.replace(`${location.pathname}?v=${Date.now()}`);
+  });
+
+  $('#reload-signing').addEventListener('click', async () => {
+    const info = await refreshSigning();
+    render();
+    toast(info?.expiresAt ? '已读取签名信息' : '还是读不到，看下面的诊断');
   });
 
   $('#clear-data').addEventListener('click', async (event) => {
@@ -74,7 +81,11 @@ export function render() {
   } else {
     $('#settings-expiry').textContent = '未知';
     $('#settings-signing-source').textContent = isNative
-      ? 'App 内没有读到证书文件，重启一次再看；仍然是「未知」就用 Sideloadly 重新签一次。'
-      : '浏览器预览读不到签名信息，安装到 iPhone 后才会显示。';
+      ? 'App 内没有读到签名信息，点下面的「重新读取签名」再试。'
+      : '当前不是 App 内的最新安装包：原生桥没连上，重新安装最新 IPA 后生效。';
   }
+
+  $('#bridge-diag').textContent = isNative
+    ? (signingError ? `原生桥已连接 · 签名读取失败：${signingError}` : '原生桥已连接 · 签名接口正常')
+    : '原生桥未连接（旧安装包或页面来自缓存）';
 }

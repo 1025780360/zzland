@@ -84,6 +84,13 @@ async function adoptLocalData() {
   localStorage.removeItem('zzland-secret:deepseekKey');
 }
 
+export async function refreshSigning() {
+  state.signing = await getSigningInfo();
+  await syncNotifications();
+  notifyChange();
+  return state.signing;
+}
+
 async function persistReminders() {
   await writeStore('reminders', state.reminders);
   notifyChange();
