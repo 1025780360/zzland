@@ -91,6 +91,20 @@ final class Bridge: NSObject, WKScriptMessageHandler {
             center.removeDeliveredNotifications(withIdentifiers: [identifier])
             reply(id: id, ok: true, data: true)
 
+        case "app.badge":
+            let count = max(0, payload["count"] as? Int ?? 0)
+            let center = UNUserNotificationCenter.current()
+            if #available(iOS 16.0, *) {
+                center.setBadgeCount(count) { _ in
+                    self.reply(id: id, ok: true, data: true)
+                }
+            } else {
+                DispatchQueue.main.async {
+                    UIApplication.shared.applicationIconBadgeNumber = count
+                    self.reply(id: id, ok: true, data: true)
+                }
+            }
+
         case "app.info":
             let info = Bundle.main.infoDictionary
             reply(id: id, ok: true, data: [

@@ -4,8 +4,10 @@ import {
   writeStore,
   getSigningInfo,
   getNotifyStatus,
+  requestNotifyPermission,
   scheduleNotification,
   cancelNotification,
+  setBadge,
   readSecret,
   writeSecret,
 } from './bridge.js';
@@ -41,8 +43,16 @@ export async function loadState() {
   state.settings = { ...(settings || {}), apiKey: apiKey || '' };
   state.signing = signing || null;
   state.notifyStatus = notifyStatus;
+  if (isNative && state.notifyStatus === 'unknown') {
+    // 系统只会弹一次窗；不阻塞首屏，结果回来后再刷新设置页
+    requestNotifyPermission().then((status) => {
+      state.notifyStatus = status;
+      notifyChange();
+    });
+  }
   await adoptLocalData();
   await syncNotifications();
+  await syncBadge();
   notifyChange();
 }
 
@@ -93,6 +103,7 @@ export async function refreshSigning() {
 
 async function persistReminders() {
   await writeStore('reminders', state.reminders);
+  await syncBadge();
   notifyChange();
 }
 
@@ -150,7 +161,6 @@ export function removeAnalysis(id) {
   state.analyses = state.analyses.filter((item) => item.id !== id);
   persistAnalyses();
 }
-
 export async function saveApiKey(key) {
   state.settings.apiKey = key.trim();
   await writeSecret('deepseekKey', state.settings.apiKey);
@@ -160,6 +170,7 @@ export async function saveApiKey(key) {
 export async function clearAllData() {
   const ids = [
     'renew-3d',
+    'renew-24h',
     'renew-12h',
     ...state.reminders.flatMap((item) => [`r-${item.id}-early`, `r-${item.id}-due`]),
   ];
@@ -170,6 +181,7 @@ export async function clearAllData() {
     writeStore('reminders', []),
     writeStore('analyses', []),
     writeSecret('deepseekKey', ''),
+    setBadge(0),
     ...ids.map((id) => cancelNotification(id)),
   ]);
   notifyChange();
@@ -242,9 +254,11 @@ export async function syncNotifications() {
   if (!state.signing?.expiresAt) return;
   const expires = new Date(state.signing.expiresAt).getTime();
   if (Number.isNaN(expires) || expires <= now) return;
+  // 旧版本排的 12 小时提醒已由 24 小时替代
+  cancelNotification('renew-12h');
   const marks = [
     { id: 'renew-3d', offset: 3 * 86400000, body: '还有 3 天，记得连接电脑用 Sideloadly 续签。' },
-    { id: 'renew-12h', offset: 12 * 3600000, body: '不到 12 小时到期，过期后 App 将无法打开。' },
+    { id: 'renew-24h', offset: 24 * 3600000, body: '不到 24 小时到期，过期后 App 将无法打开。' },
   ];
   for (const mark of marks) {
     const at = expires - mark.offset;
@@ -257,4 +271,9 @@ export async function syncNotifications() {
       });
     }
   }
+}
+
+// 图标角标跟着未完成数量走，关掉通知权限时系统会忽略
+async function syncBadge() {
+  await setBadge(state.reminders.filter((item) => !item.done).length);
 }

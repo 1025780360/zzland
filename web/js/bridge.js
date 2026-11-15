@@ -144,6 +144,15 @@ export async function cancelNotification(id) {
   }
 }
 
+export async function setBadge(count) {
+  if (!isNative) return;
+  try {
+    await nativeCall('app.badge', { count });
+  } catch {
+    // 通知权限没开时角标设不上，忽略
+  }
+}
+
 export async function getAppInfo() {
   if (!isNative) return { version: 'web' };
   try {

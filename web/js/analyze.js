@@ -1,10 +1,11 @@
-import { state, addAnalysis, addReminder } from './store.js';
+import { state, addAnalysis, addReminder, removeAnalysis } from './store.js';
 import { buildMessages } from './prompt.js';
 import { icons } from './icons.js';
 import { $, escapeHtml, fmtDateTime, fmtDate, toast } from './utils.js';
 
 let navigateTo = () => {};
 let renderedResult = null;
+const confirmTimers = new Map();
 
 const IMPORTANCE = {
   high: { label: '高优先级', chip: 'danger' },
@@ -28,6 +29,7 @@ export function init(options = {}) {
   });
   $('#analyze-btn').addEventListener('click', analyze);
   $('#analyze-result').addEventListener('click', onResultClick);
+  $('#history-list').addEventListener('click', onHistoryClick);
   renderHistory();
 }
 
@@ -345,15 +347,48 @@ function renderHistory() {
           <p class="item-title">${escapeHtml(entry.result?.title || '分析记录')}</p>
           <p class="item-sub"><span>${escapeHtml(level.label)}${escapeHtml(due)}</span></p>
         </div>
+        <button class="del" type="button" data-redo="${escapeHtml(entry.id)}" aria-label="重新分析">${icons.scan}</button>
+        <button class="del" type="button" data-del="${escapeHtml(entry.id)}" aria-label="删除记录">${icons.trash}</button>
       </div>`;
   }).join('');
+}
 
-  list.querySelectorAll('[data-history]').forEach((node) => {
-    node.addEventListener('click', () => {
-      const entry = state.analyses.find((item) => item.id === node.dataset.history);
-      if (!entry) return;
-      renderResult(entry.result);
-      $('#analyze-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  });
+function onHistoryClick(event) {
+  const del = event.target.closest('[data-del]');
+  if (del) {
+    const id = del.dataset.del;
+    if (del.dataset.confirm !== '1') {
+      del.dataset.confirm = '1';
+      del.innerHTML = '<span class="del-confirm">确认</span>';
+      clearTimeout(confirmTimers.get(id));
+      confirmTimers.set(id, setTimeout(() => {
+        del.dataset.confirm = '0';
+        del.innerHTML = icons.trash;
+      }, 3000));
+      return;
+    }
+    clearTimeout(confirmTimers.get(id));
+    removeAnalysis(id);
+    renderHistory();
+    toast('已删除这条记录');
+    return;
+  }
+
+  const redo = event.target.closest('[data-redo]');
+  if (redo) {
+    const entry = state.analyses.find((item) => item.id === redo.dataset.redo);
+    if (!entry) return;
+    const input = $('#notice-text');
+    input.value = entry.text || '';
+    input.dispatchEvent(new Event('input'));
+    analyze();
+    return;
+  }
+
+  const row = event.target.closest('[data-history]');
+  if (!row) return;
+  const entry = state.analyses.find((item) => item.id === row.dataset.history);
+  if (!entry) return;
+  renderResult(entry.result);
+  $('#analyze-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
