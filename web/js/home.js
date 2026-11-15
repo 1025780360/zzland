@@ -1,5 +1,6 @@
 import { state, openReminders } from './store.js';
 import { isNative } from './bridge.js';
+import { icons } from './icons.js';
 import { $, $$, escapeHtml, fmtDateTime, dueLabel, startOfDay, pluralDays } from './utils.js';
 
 let navigateTo = () => {};
@@ -31,8 +32,6 @@ function renderSigning() {
   const line = $('#expiry-line');
   const meter = $('#signing-meter');
   const tip = $('#signing-tip');
-  const ring = $('#signing-ring');
-  const ringLabel = $('#ring-label');
   const info = state.signing;
 
   if (!info?.expiresAt) {
@@ -44,9 +43,6 @@ function renderSigning() {
       : '没检测到原生桥：浏览器预览读不到签名；如果这是在 App 里，说明装的是旧安装包。';
     meter.style.width = '0%';
     meter.className = '';
-    ring.className = 'ring off';
-    ring.style.setProperty('--p', '0');
-    ringLabel.textContent = '—';
     tip.textContent = isNative
       ? '如果一直读不到，说明这次签名没有写入描述文件，用 Sideloadly 重新签一次即可。'
       : '重新安装最新 IPA（带原生桥的版本）后，这里会显示真实到期时间。';
@@ -64,9 +60,6 @@ function renderSigning() {
     line.textContent = `${fmtDateTime(info.expiresAt)} 已到期`;
     meter.style.width = '0%';
     meter.className = 'danger';
-    ring.className = 'ring danger';
-    ring.style.setProperty('--p', '0');
-    ringLabel.textContent = '0%';
     tip.textContent = '证书已过期，App 需要连接电脑重新签名安装才能打开。';
     return;
   }
@@ -81,26 +74,21 @@ function renderSigning() {
   const ratio = Math.max(0, Math.min(1, remain / total));
   const percent = Math.round(ratio * 100);
   meter.style.width = `${percent}%`;
-  ring.style.setProperty('--p', String(percent));
-  ringLabel.textContent = `${percent}%`;
 
   if (hoursTotal <= 24) {
     chip.className = 'chip danger';
     chip.textContent = '紧急';
     meter.className = 'danger';
-    ring.className = 'ring danger';
     tip.textContent = '不到 24 小时，今天务必连接电脑用 Sideloadly 续签。';
   } else if (hoursTotal <= 72) {
     chip.className = 'chip warn';
     chip.textContent = '注意';
     meter.className = 'warn';
-    ring.className = 'ring warn';
     tip.textContent = '建议这两天找时间续签，过期后 App 将无法打开。';
   } else {
     chip.className = 'chip ok';
     chip.textContent = '正常';
     meter.className = '';
-    ring.className = 'ring';
     tip.textContent = '状态正常。到期前 3 天和 12 小时会发本地提醒。';
   }
 
@@ -121,7 +109,7 @@ function renderUpcoming() {
   if (!items.length) {
     list.innerHTML = `
       <div class="empty">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14M5 12h9M5 16h6"/></svg>
+        ${icons.inbox}
         暂无待办。<br>把通知粘贴到「分析」，或到「提醒」里手动新增。
       </div>`;
     return;

@@ -7,7 +7,7 @@ import {
 import { requestNotifyPermission, isNative, signingError } from './bridge.js';
 import { $, fmtDateTime, toast } from './utils.js';
 
-const WEB_VERSION = '2026-11-15.7';
+const WEB_VERSION = '2026-11-15.8';
 let clearArmed = false;
 
 export function init() {
@@ -41,17 +41,17 @@ export function init() {
     const button = event.currentTarget;
     if (!clearArmed) {
       clearArmed = true;
-      button.textContent = '再点一次确认清空';
+      button.textContent = '确认清空';
       setTimeout(() => {
         clearArmed = false;
-        button.textContent = '清空本机数据';
+        button.textContent = '清空';
       }, 3000);
       return;
     }
     await clearAllData();
     $('#access-key').value = '';
     clearArmed = false;
-    button.textContent = '清空本机数据';
+    button.textContent = '清空';
     toast('已清空');
     render();
   });

@@ -1,5 +1,6 @@
 import { state, addAnalysis, addReminder } from './store.js';
 import { buildMessages } from './prompt.js';
+import { icons } from './icons.js';
 import { $, escapeHtml, fmtDateTime, fmtDate, toast } from './utils.js';
 
 let navigateTo = () => {};
@@ -29,7 +30,7 @@ function onResultClick(event) {
     const action = renderedResult.actions[Number(addOne.dataset.addAction)];
     if (action) {
       addActionReminder(renderedResult, action);
-      addOne.textContent = '✓';
+      addOne.innerHTML = icons.check;
       addOne.classList.add('done');
       addOne.disabled = true;
     }
@@ -81,7 +82,7 @@ function validDate(value) {
 const USE_MOCK = ['127.0.0.1', 'localhost'].includes(location.hostname)
   && new URLSearchParams(location.search).has('mock');
 
-const ANALYZE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>';
+const ANALYZE_ICON = icons.scan;
 
 async function analyze() {
   const text = $('#notice-text').value.trim();
@@ -208,7 +209,7 @@ function renderResult(result) {
         ${escapeHtml(action.text)}
         ${action.due ? `<span class="tag">${escapeHtml(fmtDateTime(action.due))}</span>` : ''}
       </div>
-      <button class="add-btn" type="button" data-add-action="${index}" aria-label="加入提醒">＋</button>
+      <button class="add-btn" type="button" data-add-action="${index}" aria-label="加入提醒">${icons.plus}</button>
     </div>`).join('');
 
   const meta = [
@@ -255,7 +256,7 @@ function renderHistory() {
   if (!state.analyses.length) {
     list.innerHTML = `
       <div class="empty">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5zM8 9h8M8 13h5"/></svg>
+        ${icons.inbox}
         还没有分析记录。粘贴一条通知试试。
       </div>`;
     return;

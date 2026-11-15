@@ -1,4 +1,5 @@
 import { state, addReminder, toggleReminder, deleteReminder, sortedReminders, openReminders } from './store.js';
+import { icons } from './icons.js';
 import { $, escapeHtml, dueLabel, toast } from './utils.js';
 
 const confirmTimers = new Map();
@@ -70,7 +71,7 @@ export function render() {
   if (!items.length) {
     $('#reminder-list').innerHTML = `
       <div class="empty">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6zM9 9h6M9 13h4"/></svg>
+        ${icons.inbox}
         还没有提醒。<br>点右上角「新增」，或从通知分析结果里加入。
       </div>`;
     return;
@@ -89,7 +90,7 @@ export function render() {
 
     return `
       <div class="item">
-        <button class="check ${item.done ? 'on' : ''}" type="button" data-toggle="${item.id}" aria-label="${item.done ? '标记未完成' : '标记完成'}" aria-pressed="${item.done}">✓</button>
+        <button class="check ${item.done ? 'on' : ''}" type="button" data-toggle="${item.id}" aria-label="${item.done ? '标记未完成' : '标记完成'}" aria-pressed="${item.done}">${icons.check}</button>
         <span class="dot ${overdue ? 'overdue' : item.priority}"></span>
         <div class="item-main">
           <p class="item-title ${item.done ? 'done' : ''}">${escapeHtml(item.title)}</p>
