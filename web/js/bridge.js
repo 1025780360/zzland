@@ -18,7 +18,7 @@ export const isNative = Boolean(nativeHandler);
 export function nativeCall(action, payload = {}) {
   if (!nativeHandler) return Promise.reject(new Error('not-native'));
   return new Promise((resolve, reject) => {
-    const id = ++seq;
+    const id = String(++seq); // 原生按字符串解析 id，数字会被直接丢弃
     pending.set(id, { resolve, reject });
     nativeHandler.postMessage({ id, action, payload });
     setTimeout(() => {
