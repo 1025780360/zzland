@@ -607,34 +607,53 @@ textarea:focus, input:focus, select:focus { border-color: var(--accent); backgro
 .result-empty-ico svg { width: 18px; height: 18px; }
 .result-empty .small { max-width: 240px; }
 
-/* 底部导航 */
+/* 底部导航：浮起的玻璃条 */
 .tabbar {
   position: fixed;
   left: 50%;
-  bottom: 0;
+  bottom: calc(10px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
-  width: 100%;
-  max-width: 520px;
+  width: calc(100% - 24px);
+  max-width: 360px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  background: rgba(255, 254, 251, .92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--line);
-  padding:
-    6px
-    calc(8px + env(safe-area-inset-right))
-    calc(6px + env(safe-area-inset-bottom))
-    calc(8px + env(safe-area-inset-left));
+  gap: 2px;
+  padding: 6px;
+  border-radius: 30px;
+  background: rgba(255, 254, 251, .46);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, .6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    inset 0 -1px 0 rgba(29, 27, 23, .05),
+    0 12px 28px rgba(29, 27, 23, .12),
+    0 2px 6px rgba(29, 27, 23, .05);
   z-index: 20;
-  transition: transform 200ms var(--ease);
+  transition: transform 200ms var(--ease), opacity 200ms var(--ease);
+}
+
+/* 顶缘高光，玻璃才会有厚度 */
+.tabbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 54%);
+  pointer-events: none;
+}
+
+/* 老机型不支持背景模糊时退成实色 */
+@supports not (backdrop-filter: blur(1px)) {
+  .tabbar { background: rgba(255, 254, 251, .97); }
 }
 
 .tab {
+  position: relative;
   border: 0;
   background: none;
-  border-radius: 10px;
-  padding: 6px 4px 4px;
+  border-radius: 24px;
+  padding: 6px 4px 5px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -642,17 +661,25 @@ textarea:focus, input:focus, select:focus { border-color: var(--accent); backgro
   color: var(--muted);
   font-size: 11px;
   font-weight: 500;
+  z-index: 1;
+  transition: color 150ms var(--ease), background-color 150ms var(--ease);
 }
 .tab svg { width: 22px; height: 22px; transition: transform 140ms var(--ease); }
-.tab:active { background: var(--raised); }
+.tab:active { background: rgba(255, 255, 255, .38); }
 .tab:active svg { transform: scale(.9); }
-.tab.active { color: var(--accent); }
+.tab.active {
+  color: var(--accent);
+  background: rgba(255, 255, 255, .62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .9),
+    0 1px 2px rgba(29, 27, 23, .06);
+}
 
 /* 提示 */
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(84px + env(safe-area-inset-bottom));
+  bottom: calc(96px + env(safe-area-inset-bottom));
   transform: translate(-50%, 8px);
   max-width: min(88vw, 420px);
   padding: 10px 16px;
@@ -682,8 +709,8 @@ textarea:focus, input:focus, select:focus { border-color: var(--accent); backgro
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Qoder 站点水印固定在右下角，底部栏整体让开 */
-body.has-watermark .tabbar { bottom: calc(50px + env(safe-area-inset-bottom)); }
-body.has-watermark .toast { bottom: calc(132px + env(safe-area-inset-bottom)); }
+body.has-watermark .tabbar { bottom: calc(60px + env(safe-area-inset-bottom)); }
+body.has-watermark .toast { bottom: calc(146px + env(safe-area-inset-bottom)); }
 body.has-watermark .app { padding-bottom: calc(154px + env(safe-area-inset-bottom)); }
 
 @media (min-width: 560px) {
@@ -808,10 +835,16 @@ body.duo-rail-left .tabbar {
   flex-direction: column;
   gap: 2px;
   padding: 6px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: rgba(255, 254, 251, .96);
-  box-shadow: var(--shadow-float);
+  background: rgba(255, 254, 251, .5);
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .6);
+  border-radius: 24px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .75),
+    inset 0 -1px 0 rgba(29, 27, 23, .05),
+    0 12px 28px rgba(29, 27, 23, .14),
+    0 2px 6px rgba(29, 27, 23, .05);
 }
 body.duo-rail .tabbar { left: auto; right: calc((var(--duo-rail) - 68px) / 2); }
 body.duo-rail-left .tabbar { right: auto; left: calc((var(--duo-rail) - 68px) / 2); }
