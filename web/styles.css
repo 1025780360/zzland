@@ -400,6 +400,54 @@ textarea:focus, input:focus, select:focus { border-color: var(--accent); backgro
 .form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+/* 待办搜索与筛选 */
+.filter-bar { display: flex; flex-direction: column; gap: 8px; }
+.search-field { position: relative; }
+.search-field > svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.search-field input { height: 40px; padding: 0 38px 0 36px; }
+.search-field input::-webkit-search-cancel-button { display: none; }
+.search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+}
+.search-clear[hidden] { display: none; }
+.search-clear svg { width: 15px; height: 15px; }
+.search-clear:active { background: var(--raised); }
+.fchips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.fchips::-webkit-scrollbar { display: none; }
+.fchip {
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 150ms var(--ease), border-color 150ms var(--ease), color 150ms var(--ease);
+}
+.fchip:active { background: var(--raised); }
+.fchip.is-on { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+
 /* 分析结果 */
 .result { display: flex; flex-direction: column; gap: 16px; }
 .result-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }

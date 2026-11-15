@@ -1,8 +1,10 @@
 import { state, addReminder, toggleReminder, deleteReminder, sortedReminders, openReminders } from './store.js';
 import { icons } from './icons.js';
-import { $, escapeHtml, dueLabel, toast } from './utils.js';
+import { $, $$, escapeHtml, dueLabel, toast } from './utils.js';
 
 const confirmTimers = new Map();
+let query = '';
+let filter = 'all';
 
 export function init() {
   $('#add-reminder-btn').addEventListener('click', () => {
@@ -23,11 +25,74 @@ export function init() {
       note: $('#r-note').value,
     });
     closeForm();
+    resetFilters();
     render();
     toast(dueValue ? '已加入提醒，并安排好通知' : '已加入提醒');
   });
+  $('#r-search').addEventListener('input', (event) => {
+    query = event.target.value.trim();
+    syncFilterUI();
+    render();
+  });
+  $('#r-search-clear').addEventListener('click', () => {
+    query = '';
+    $('#r-search').value = '';
+    syncFilterUI();
+    render();
+    $('#r-search').focus();
+  });
+  $('#r-filters').addEventListener('click', (event) => {
+    const btn = event.target.closest('[data-filter]');
+    if (!btn) return;
+    filter = btn.dataset.filter;
+    syncFilterUI();
+    render();
+  });
   $('#reminder-list').addEventListener('click', onListClick);
+  syncFilterUI();
   render();
+}
+
+function resetFilters() {
+  query = '';
+  filter = 'all';
+  $('#r-search').value = '';
+  syncFilterUI();
+}
+
+function syncFilterUI() {
+  $('#r-search-clear').hidden = !query;
+  $$('#r-filters .fchip').forEach((btn) => {
+    const on = btn.dataset.filter === filter;
+    btn.classList.toggle('is-on', on);
+    btn.setAttribute('aria-pressed', String(on));
+  });
+}
+
+// 一周从周一开始，到周日 24 点结束
+function weekRange(now) {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (start.getDay() + 6) % 7);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return [start.getTime(), end.getTime()];
+}
+
+function matches(item, now) {
+  if (query) {
+    const hay = `${item.title} ${item.note || ''}`.toLowerCase();
+    if (!hay.includes(query.toLowerCase())) return false;
+  }
+  if (filter === 'done') return item.done;
+  if (filter === 'overdue') return !item.done && item.due && new Date(item.due).getTime() < now;
+  if (filter === 'week') {
+    if (!item.due) return false;
+    const [start, end] = weekRange(now);
+    const due = new Date(item.due).getTime();
+    return due >= start && due < end;
+  }
+  return true;
 }
 
 function closeForm() {
@@ -64,26 +129,27 @@ function onListClick(event) {
 }
 
 export function render() {
-  const open = openReminders();
-  $('#reminder-summary').textContent = `${open.length} 项待办`;
+  const now = Date.now();
+  const filtering = filter !== 'all' || Boolean(query);
+  const items = sortedReminders().filter((item) => matches(item, now));
 
-  const items = sortedReminders();
+  $('#reminder-summary').textContent = filtering
+    ? `匹配 ${items.length} 项`
+    : `${openReminders().length} 项待办`;
+
   if (!items.length) {
-    $('#reminder-list').innerHTML = `
-      <div class="empty">
-        ${icons.inbox}
-        还没有提醒，点右上角「新增」
-      </div>`;
+    $('#reminder-list').innerHTML = filtering
+      ? `<div class="empty">${icons.search}没有匹配的待办，换个关键词或筛选</div>`
+      : `<div class="empty">${icons.inbox}还没有提醒，点右上角「新增」</div>`;
     return;
   }
 
-  const now = Date.now();
   const openItems = items.filter((item) => !item.done);
   const doneItems = items.filter((item) => item.done);
 
   const renderOne = (item) => {
     const overdue = !item.done && item.due && new Date(item.due).getTime() < now;
-    const dueText = item.due ? `${overdue ? '已逾期 · ' : ''}${dueLabel(item.due)}` : '无截止时间';
+    const dueText = item.due ? dueLabel(item.due) : '无截止时间';
     let sub = `<span>${escapeHtml(dueText)}</span>`;
     if (item.note && item.source !== 'notice') sub += `<span>${escapeHtml(item.note.slice(0, 28))}</span>`;
     if (item.source === 'notice') sub += '<span class="tag">来自通知</span>';
