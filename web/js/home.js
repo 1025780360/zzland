@@ -41,7 +41,7 @@ function renderSigning() {
     line.textContent = isNative
       ? '没有读到 App 包内的证书文件，重启一次 App 再试。'
       : '没检测到原生桥：浏览器预览读不到签名；如果这是在 App 里，说明装的是旧安装包。';
-    meter.style.width = '0%';
+    meter.style.setProperty('--v', '0');
     meter.className = '';
     tip.textContent = isNative
       ? '如果一直读不到，说明这次签名没有写入描述文件，用 Sideloadly 重新签一次即可。'
@@ -58,7 +58,7 @@ function renderSigning() {
     chip.textContent = '已过期';
     countdown.innerHTML = '0<small>天</small>';
     line.textContent = `${fmtDateTime(info.expiresAt)} 已到期`;
-    meter.style.width = '0%';
+    meter.style.setProperty('--v', '0');
     meter.className = 'danger';
     tip.textContent = '证书已过期，App 需要连接电脑重新签名安装才能打开。';
     return;
@@ -73,7 +73,7 @@ function renderSigning() {
   const total = Number.isFinite(installed) && installed < expires ? expires - installed : 7 * 86400000;
   const ratio = Math.max(0, Math.min(1, remain / total));
   const percent = Math.round(ratio * 100);
-  meter.style.width = `${percent}%`;
+  meter.style.setProperty('--v', String(percent / 100));
 
   if (hoursTotal <= 24) {
     chip.className = 'chip danger';
@@ -110,7 +110,7 @@ function renderUpcoming() {
     list.innerHTML = `
       <div class="empty">
         ${icons.inbox}
-        暂无待办。<br>把通知粘贴到「分析」，或到「提醒」里手动新增。
+        暂无待办，先去分析一条通知
       </div>`;
     return;
   }
@@ -121,7 +121,7 @@ function renderUpcoming() {
     const overdue = due.getTime() < now;
     const isToday = startOfDay(due).getTime() === todayStart;
     return `
-      <div class="item">
+      <div class="item pri-${item.priority} ${overdue ? 'is-overdue' : ''}">
         <div class="date-badge ${overdue ? 'overdue' : ''}">
           <b>${due.getDate()}</b>
           <span>${isToday ? '今天' : `${due.getMonth() + 1} 月`}</span>

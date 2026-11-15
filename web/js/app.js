@@ -3,6 +3,7 @@ import * as home from './home.js';
 import * as analyze from './analyze.js';
 import * as reminders from './reminders.js';
 import * as settings from './settings.js';
+import * as clipboard from './clipboard.js';
 import { $, $$ } from './utils.js';
 import { watchLayout, applyNativeScreen } from './layout.js';
 import { getScreenInfo } from './bridge.js';
@@ -83,6 +84,7 @@ async function main() {
   analyze.init({ navigate });
   reminders.init();
   settings.init();
+  clipboard.init({ navigate });
   onChange(renderAll);
   navigate('home');
 }

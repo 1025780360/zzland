@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f2f2f7">
+  <meta name="theme-color" content="#f6f4ef">
   <meta name="format-detection" content="telephone=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -14,7 +14,6 @@
   <div class="app">
     <header class="topbar">
       <div class="topbar-main">
-        <p class="eyebrow">校园助手</p>
         <h1 id="page-title">今天</h1>
         <p class="today-line" id="today-line"></p>
       </div>
@@ -22,6 +21,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
       </button>
     </header>
+
+    <div class="clip-bar" id="clip-bar" hidden>
+      <span class="clip-text">剪贴板里有新内容</span>
+      <button class="clip-action" id="clip-fill" type="button">去分析</button>
+      <button class="clip-close" id="clip-dismiss" type="button" aria-label="忽略">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
 
     <main>
       <!-- 首页 -->
@@ -47,21 +54,11 @@
 
         <div class="stat-row">
           <button class="card stat" data-goto="reminders" type="button">
-            <span class="stat-head">
-              <span class="stat-ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg>
-              </span>
-              待办
-            </span>
+            <span class="stat-label">待办</span>
             <strong id="stat-open">0</strong>
           </button>
           <button class="card stat" data-goto="reminders" type="button">
-            <span class="stat-head">
-              <span class="stat-ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/></svg>
-              </span>
-              今天截止
-            </span>
+            <span class="stat-label">今天截止</span>
             <strong id="stat-today">0</strong>
           </button>
         </div>
@@ -79,9 +76,13 @@
       <section class="view" id="view-analyze" data-title="通知分析" hidden>
         <article class="card">
           <label class="label" for="notice-text">粘贴学校通知</label>
-          <textarea id="notice-text" rows="7" placeholder="把群通知、教务公告原文粘进来。带上时间、地点、材料等信息，分析会更准。"></textarea>
+          <textarea id="notice-text" rows="7" placeholder="粘贴通知原文"></textarea>
           <div class="row between">
-            <span class="muted small" id="text-count">0 字</span>
+            <div class="row row-tight">
+              <span class="muted small" id="text-count">0 字</span>
+              <button class="link-btn" id="paste-text" type="button">读取剪贴板</button>
+              <button class="link-btn" id="clear-text" type="button" hidden>清空</button>
+            </div>
             <button class="primary" id="analyze-btn" type="button">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8h8"/><path d="M7 12h10"/><path d="M7 16h6"/></svg>
               开始分析

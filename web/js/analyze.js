@@ -7,16 +7,24 @@ let navigateTo = () => {};
 let renderedResult = null;
 
 const IMPORTANCE = {
-  high: { label: '重要 · 高', chip: 'danger' },
-  medium: { label: '重要 · 中', chip: 'warn' },
-  low: { label: '重要 · 低', chip: 'ok' },
+  high: { label: '高优先级', chip: 'danger' },
+  medium: { label: '中优先级', chip: 'warn' },
+  low: { label: '低优先级', chip: 'ok' },
 };
 
 export function init(options = {}) {
   navigateTo = options.navigate || navigateTo;
   const input = $('#notice-text');
-  input.addEventListener('input', () => {
-    $('#text-count').textContent = `${input.value.trim().length} 字`;
+  const syncCount = () => {
+    const length = input.value.trim().length;
+    $('#text-count').textContent = `${length} 字`;
+    $('#clear-text').hidden = !length;
+  };
+  input.addEventListener('input', syncCount);
+  syncCount();
+  $('#clear-text').addEventListener('click', () => {
+    input.value = '';
+    syncCount();
   });
   $('#analyze-btn').addEventListener('click', analyze);
   $('#analyze-result').addEventListener('click', onResultClick);
@@ -45,6 +53,23 @@ function onResultClick(event) {
 }
 
 function normalizeResult(raw) {
+  const keywords = Array.isArray(raw?.keywords)
+    ? raw.keywords
+        .map((item) => (typeof item === 'string' ? item : item?.text))
+        .filter((item) => typeof item === 'string' && item.trim())
+        .slice(0, 8)
+        .map((item) => item.trim().slice(0, 20))
+    : [];
+  const associations = Array.isArray(raw?.associations)
+    ? raw.associations
+        .filter((item) => item && typeof (item.note ?? item.text) === 'string')
+        .slice(0, 8)
+        .map((item) => ({
+          keyword: String(item.keyword || '').trim().slice(0, 20),
+          note: String(item.note ?? item.text).trim().slice(0, 240),
+        }))
+        .filter((item) => item.note)
+    : [];
   const actions = Array.isArray(raw?.actions)
     ? raw.actions
         .filter((item) => item && typeof item.text === 'string' && item.text.trim())
@@ -60,6 +85,8 @@ function normalizeResult(raw) {
   const importance = ['high', 'medium', 'low'].includes(raw?.importance) ? raw.importance : 'medium';
   return {
     title: String(raw?.title || '学校通知').slice(0, 80),
+    keywords,
+    associations,
     importance,
     importance_reason: String(raw?.importance_reason || '').slice(0, 300),
     summary: String(raw?.summary || '').slice(0, 600),
@@ -100,7 +127,7 @@ async function analyze() {
   button.disabled = true;
   button.innerHTML = '<span class="spinner"></span>分析中…';
   $('#analyze-result').innerHTML = `
-    <article class="card"><div class="loading"><span class="spinner"></span>正在阅读通知，提取截止时间和待办…</div></article>`;
+    <article class="card"><div class="loading"><span class="spinner"></span>正在分析这条通知…</div></article>`;
 
   try {
     const raw = USE_MOCK ? await mockAnalysis() : await requestAnalysis(text);
@@ -182,8 +209,14 @@ function mockAnalysis() {
     due.setHours(17, 0, 0, 0);
     setTimeout(() => resolve({
       title: '关于提交物理实验报告的通知',
+      keywords: ['大学物理实验', '实验报告', 'A302', '逾期不计', '本周五'],
+      associations: [
+        { keyword: '大学物理实验', note: '理工科必修实验课，报告通常计入平时成绩，电子类专业也要修。' },
+        { keyword: '实验报告', note: '需要原始数据、误差分析和签字，缺一项常被退回，直接拉低课程分。' },
+        { keyword: '逾期不计', note: '属于硬性扣分规则，没有补救空间，优先级高。' },
+      ],
       importance: 'high',
-      importance_reason: '两天内截止，且直接影响实验课平时成绩。',
+      importance_reason: '这条对你是高优先级：两天内截止，直接影响实验课平时成绩；大学物理实验是电子类专业的必修实验环节。',
       summary: '本周五 17:00 前把实验报告交到实验楼 A302，需要附上原始数据并签字，逾期不计成绩。',
       deadline: due.toISOString(),
       deadline_text: '本周五 17:00 前',
@@ -213,26 +246,54 @@ function renderResult(result) {
     </div>`).join('');
 
   const meta = [
-    result.importance_reason ? `<div class="meta-row"><b>为什么</b><span>${escapeHtml(result.importance_reason)}</span></div>` : '',
     result.deadline ? `<div class="meta-row"><b>截止</b><span>${escapeHtml(fmtDateTime(result.deadline))}${result.deadline_text ? `（原文：${escapeHtml(result.deadline_text)}）` : ''}</span></div>` : '',
     result.audience ? `<div class="meta-row"><b>对象</b><span>${escapeHtml(result.audience)}</span></div>` : '',
     result.location ? `<div class="meta-row"><b>地点</b><span>${escapeHtml(result.location)}</span></div>` : '',
   ].filter(Boolean).join('');
 
+  const impact = result.importance_reason
+    ? `<div class="impact ${level.chip}">
+        <p class="impact-label">对你的影响</p>
+        <p class="impact-text">${escapeHtml(result.importance_reason)}</p>
+      </div>`
+    : '';
+
+  const keywords = result.keywords?.length
+    ? `<div>
+        <p class="field-label">关键词</p>
+        <div class="tags">${result.keywords.map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join('')}</div>
+      </div>`
+    : '';
+
+  const associations = result.associations?.length
+    ? `<div>
+        <p class="field-label">关键词联想</p>
+        <div class="assoc">${result.associations.map((item) => `
+          <div class="assoc-row">
+            ${item.keyword ? `<p class="assoc-key">${escapeHtml(item.keyword)}</p>` : ''}
+            <p class="assoc-note">${escapeHtml(item.note)}</p>
+          </div>`).join('')}
+        </div>
+      </div>`
+    : '';
+
   $('#analyze-result').innerHTML = `
     <article class="card result">
       <div class="result-head">
         <div>
-          <p class="muted small">分析结果</p>
+          <p class="result-kicker">按信息管理学院 · 中俄信息 262 评估</p>
           <h2 class="result-title">${escapeHtml(result.title)}</h2>
         </div>
         <span class="chip ${level.chip}">${level.label}</span>
       </div>
+      ${impact}
       ${result.summary ? `<p class="result-summary">${escapeHtml(result.summary)}</p>` : ''}
+      ${keywords}
+      ${associations}
       ${meta ? `<div class="meta">${meta}</div>` : ''}
-      ${actions ? `<div><p class="label" style="margin-bottom:6px">需要做的事</p>${actions}</div>` : ''}
-      ${result.materials.length ? `<div><p class="label" style="margin-bottom:6px">准备材料</p><div class="tags">${result.materials.map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join('')}</div></div>` : ''}
-      ${result.risks.length ? `<div><p class="label" style="margin-bottom:6px">错过的影响</p>${result.risks.map((item) => `<p class="risk">· ${escapeHtml(item)}</p>`).join('')}</div>` : ''}
+      ${actions ? `<div><p class="field-label">需要做的事</p>${actions}</div>` : ''}
+      ${result.materials.length ? `<div><p class="field-label">准备材料</p><div class="tags">${result.materials.map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join('')}</div></div>` : ''}
+      ${result.risks.length ? `<div><p class="field-label">错过的影响</p>${result.risks.map((item) => `<p class="risk">${escapeHtml(item)}</p>`).join('')}</div>` : ''}
       ${result.actions.length ? `<button class="primary block-btn" id="add-all-actions" type="button">全部加入提醒（${result.actions.length}）</button>` : ''}
     </article>`;
 }
@@ -260,7 +321,7 @@ function renderEmptyResult() {
     <article class="card result-empty">
       <span class="result-empty-ico">${icons.scan}</span>
       <p class="setting-title">分析结果</p>
-      <p class="muted small">粘贴通知后点「开始分析」，这里会列出截止时间、要做的事和错过的影响。</p>
+      <p class="muted small">粘贴一条通知，这里会给出影响、截止和待办</p>
     </article>`;
 }
 
@@ -278,7 +339,7 @@ function renderHistory() {
     const level = IMPORTANCE[entry.result?.importance] || IMPORTANCE.medium;
     const due = entry.result?.deadline ? ` · 截止 ${fmtDate(entry.result.deadline)}` : '';
     return `
-      <div class="item history-item" data-history="${escapeHtml(entry.id)}">
+      <div class="item history-item pri-${entry.result?.importance || 'medium'}" data-history="${escapeHtml(entry.id)}">
         <span class="dot ${entry.result?.importance === 'high' ? 'high' : entry.result?.importance === 'low' ? 'low' : 'normal'}"></span>
         <div class="item-main">
           <p class="item-title">${escapeHtml(entry.result?.title || '分析记录')}</p>

@@ -58,15 +58,15 @@ jobs:
           /usr/libexec/PlistBuddy -c "Delete :ZZBuildStamp" "$APP_PATH/Info.plist" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :ZZBuildSDK string $SDK_VERSION" "$APP_PATH/Info.plist"
           /usr/libexec/PlistBuddy -c "Add :ZZBuildStamp string $STAMP" "$APP_PATH/Info.plist"
-          rm -rf Payload CampusAssistant.ipa
+          rm -rf Payload zzland.ipa
           mkdir Payload
           cp -R "$APP_PATH" Payload/
-          ditto -c -k --sequesterRsrc --keepParent Payload CampusAssistant.ipa
-          ls -lh CampusAssistant.ipa
+          ditto -c -k --sequesterRsrc --keepParent Payload zzland.ipa
+          ls -lh zzland.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: CampusAssistant-ipa
-          path: ios/CampusAssistant.ipa
+          name: zzland-ipa
+          path: ios/zzland.ipa
           if-no-files-found: error

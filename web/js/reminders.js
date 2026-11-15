@@ -49,11 +49,11 @@ function onListClick(event) {
   const id = del.dataset.del;
   if (del.dataset.confirm !== '1') {
     del.dataset.confirm = '1';
-    del.textContent = '确认删除';
+    del.innerHTML = '<span class="del-confirm">确认</span>';
     clearTimeout(confirmTimers.get(id));
     confirmTimers.set(id, setTimeout(() => {
       del.dataset.confirm = '0';
-      del.textContent = '删除';
+      del.innerHTML = icons.trash;
     }, 3000));
     return;
   }
@@ -72,7 +72,7 @@ export function render() {
     $('#reminder-list').innerHTML = `
       <div class="empty">
         ${icons.inbox}
-        还没有提醒。<br>点右上角「新增」，或从通知分析结果里加入。
+        还没有提醒，点右上角「新增」
       </div>`;
     return;
   }
@@ -89,21 +89,21 @@ export function render() {
     if (item.source === 'notice') sub += '<span class="tag">来自通知</span>';
 
     return `
-      <div class="item">
+      <div class="item pri-${item.priority} ${overdue ? 'is-overdue' : ''}">
         <button class="check ${item.done ? 'on' : ''}" type="button" data-toggle="${item.id}" aria-label="${item.done ? '标记未完成' : '标记完成'}" aria-pressed="${item.done}">${icons.check}</button>
         <span class="dot ${overdue ? 'overdue' : item.priority}"></span>
         <div class="item-main">
           <p class="item-title ${item.done ? 'done' : ''}">${escapeHtml(item.title)}</p>
           <p class="item-sub">${sub}</p>
         </div>
-        <button class="link-btn del" type="button" data-del="${item.id}">删除</button>
+        <button class="del" type="button" data-del="${item.id}" aria-label="删除">${icons.trash}</button>
       </div>`;
   };
 
   const blocks = [];
   if (openItems.length) blocks.push(openItems.map(renderOne).join(''));
   if (doneItems.length) {
-    blocks.push(`<p class="label" style="margin:6px 2px 0">已完成（${doneItems.length}）</p>`);
+    blocks.push(`<p class="list-label">已完成 · ${doneItems.length}</p>`);
     blocks.push(doneItems.map(renderOne).join(''));
   }
   $('#reminder-list').innerHTML = blocks.join('');

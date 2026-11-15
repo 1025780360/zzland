@@ -51,6 +51,16 @@ final class Bridge: NSObject, WKScriptMessageHandler {
             Keychain.set(value, for: key)
             reply(id: id, ok: true, data: true)
 
+        case "clipboard.state":
+            let pasteboard = UIPasteboard.general
+            reply(id: id, ok: true, data: [
+                "hasStrings": pasteboard.hasStrings,
+                "changeCount": pasteboard.changeCount,
+            ])
+
+        case "clipboard.read":
+            reply(id: id, ok: true, data: UIPasteboard.general.string ?? "")
+
         case "signing.info":
             let info = SigningInfo.current()
             reply(id: id, ok: true, data: [
