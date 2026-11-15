@@ -1,0 +1,112 @@
+import { state, openReminders } from './store.js';
+import { $, escapeHtml, fmtDateTime, dueLabel, startOfDay, pluralDays } from './utils.js';
+
+let navigateTo = () => {};
+let timer = 0;
+
+export function init(options = {}) {
+  navigateTo = options.navigate || navigateTo;
+  $('#go-reminders').addEventListener('click', () => navigateTo('reminders'));
+  render();
+  clearInterval(timer);
+  timer = setInterval(renderSigning, 30000);
+}
+
+export function render() {
+  renderSigning();
+  renderStats();
+  renderUpcoming();
+}
+
+function renderSigning() {
+  const chip = $('#signing-chip');
+  const countdown = $('#countdown');
+  const line = $('#expiry-line');
+  const meter = $('#signing-meter');
+  const tip = $('#signing-tip');
+  const info = state.signing;
+
+  if (!info?.expiresAt) {
+    chip.className = 'chip';
+    chip.textContent = '未读取';
+    countdown.textContent = '—';
+    line.textContent = '签名信息只在 iPhone App 内可读取，浏览器预览时不可用。';
+    meter.style.width = '0%';
+    meter.className = '';
+    tip.textContent = '安装到手机后，这里会显示真实的证书到期时间。';
+    return;
+  }
+
+  const expires = new Date(info.expiresAt).getTime();
+  const now = Date.now();
+  const remain = expires - now;
+
+  if (remain <= 0) {
+    chip.className = 'chip danger';
+    chip.textContent = '已过期';
+    countdown.innerHTML = '0<small>天</small>';
+    line.textContent = `${fmtDateTime(info.expiresAt)} 已到期`;
+    meter.style.width = '0%';
+    meter.className = 'danger';
+    tip.textContent = '证书已过期，App 需要连接电脑重新签名安装才能打开。';
+    return;
+  }
+
+  const { days, hours, hoursTotal } = pluralDays(remain);
+  countdown.innerHTML = days > 0
+    ? `${days}<small>天</small>${hours}<small>小时</small>`
+    : `${hoursTotal}<small>小时</small>${Math.floor((remain % 3600000) / 60000)}<small>分</small>`;
+
+  const installed = info.installedAt ? new Date(info.installedAt).getTime() : NaN;
+  const total = Number.isFinite(installed) && installed < expires ? expires - installed : 7 * 86400000;
+  const ratio = Math.max(0, Math.min(1, remain / total));
+  meter.style.width = `${Math.round(ratio * 100)}%`;
+
+  if (hoursTotal <= 24) {
+    chip.className = 'chip danger';
+    chip.textContent = '紧急';
+    meter.className = 'danger';
+    tip.textContent = '不到 24 小时，今天务必连接电脑用 Sideloadly 续签。';
+  } else if (hoursTotal <= 72) {
+    chip.className = 'chip warn';
+    chip.textContent = '注意';
+    meter.className = 'warn';
+    tip.textContent = '建议这两天找时间续签，过期后 App 将无法打开。';
+  } else {
+    chip.className = 'chip ok';
+    chip.textContent = '正常';
+    meter.className = '';
+    tip.textContent = '状态正常。到期前 3 天和 12 小时会发本地提醒。';
+  }
+
+  const sourceText = info.source === 'profile' ? '证书信息' : '按首次打开时间估算';
+  line.textContent = `${fmtDateTime(info.expiresAt)} 到期 · ${sourceText}`;
+}
+
+function renderStats() {
+  const open = state.reminders.filter((item) => !item.done);
+  const today = open.filter((item) => item.due && startOfDay(item.due).getTime() === startOfDay().getTime());
+  $('#stat-open').textContent = String(open.length);
+  $('#stat-today').textContent = String(today.length);
+}
+
+function renderUpcoming() {
+  const list = $('#upcoming-list');
+  const items = openReminders().filter((item) => item.due).slice(0, 4);
+  if (!items.length) {
+    list.innerHTML = '<div class="empty">暂无待办。<br>把通知粘贴到「分析」，或到「提醒」里手动新增。</div>';
+    return;
+  }
+  const now = Date.now();
+  list.innerHTML = items.map((item) => {
+    const overdue = new Date(item.due).getTime() < now;
+    return `
+      <div class="item">
+        <span class="dot ${overdue ? 'overdue' : item.priority}"></span>
+        <div class="item-main">
+          <p class="item-title">${escapeHtml(item.title)}</p>
+          <p class="item-sub"><span>${overdue ? '已逾期 · ' : ''}${escapeHtml(dueLabel(item.due))}</span></p>
+        </div>
+      </div>`;
+  }).join('');
+}

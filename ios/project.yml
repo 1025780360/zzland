@@ -1,0 +1,38 @@
+name: CampusAssistant
+options:
+  bundleIdPrefix: com.zzland
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  CampusAssistant:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.zzland.campus
+        PRODUCT_NAME: CampusAssistant
+        INFOPLIST_FILE: Info.plist
+        TARGETED_DEVICE_FAMILY: "1"
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        SUPPORTS_MACCATALYST: NO
+        ENABLE_BITCODE: NO
+
+schemes:
+  CampusAssistant:
+    build:
+      targets:
+        CampusAssistant: all
+    run:
+      config: Debug
+    archive:
+      config: Release

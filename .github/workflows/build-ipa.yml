@@ -1,0 +1,53 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Build (unsigned)
+        working-directory: ios
+        run: |
+          xcodebuild \
+            -project CampusAssistant.xcodeproj \
+            -scheme CampusAssistant \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package unsigned IPA
+        working-directory: ios
+        run: |
+          APP_PATH="build/Build/Products/Release-iphoneos/CampusAssistant.app"
+          test -d "$APP_PATH"
+          rm -rf Payload CampusAssistant.ipa
+          mkdir Payload
+          cp -R "$APP_PATH" Payload/
+          ditto -c -k --sequesterRsrc --keepParent Payload CampusAssistant.ipa
+          ls -lh CampusAssistant.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: CampusAssistant-ipa
+          path: ios/CampusAssistant.ipa
+          if-no-files-found: error
