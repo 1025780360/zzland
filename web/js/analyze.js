@@ -1,10 +1,12 @@
-import { state, addAnalysis, addReminder, removeAnalysis } from './store.js';
-import { buildMessages } from './prompt.js';
+import { state, addAnalysis, addReminder, removeAnalysis, appendChat } from './store.js';
+import { buildMessages, buildChatMessages } from './prompt.js';
 import { icons } from './icons.js';
 import { $, escapeHtml, fmtDateTime, fmtDate, toast } from './utils.js';
 
 let navigateTo = () => {};
 let renderedResult = null;
+let renderedEntry = null;
+let chatBusy = false;
 const confirmTimers = new Map();
 
 const IMPORTANCE = {
@@ -29,6 +31,7 @@ export function init(options = {}) {
   });
   $('#analyze-btn').addEventListener('click', analyze);
   $('#analyze-result').addEventListener('click', onResultClick);
+  $('#analyze-result').addEventListener('keydown', onResultKeydown);
   $('#history-list').addEventListener('click', onHistoryClick);
   renderHistory();
 }
@@ -51,6 +54,24 @@ function onResultClick(event) {
     toast(`已加入 ${renderedResult.actions.length} 条提醒`);
     event.target.textContent = '已全部加入';
     event.target.disabled = true;
+    return;
+  }
+  const chip = event.target.closest('[data-chat-chip]');
+  if (chip) {
+    const input = $('#chat-text');
+    if (input) {
+      input.value = chip.dataset.chatChip;
+      sendChat();
+    }
+    return;
+  }
+  if (event.target.closest('[data-chat-send]')) sendChat();
+}
+
+function onResultKeydown(event) {
+  if (event.key === 'Enter' && event.target.id === 'chat-text' && !event.isComposing) {
+    event.preventDefault();
+    sendChat();
   }
 }
 
@@ -134,8 +155,8 @@ async function analyze() {
   try {
     const raw = USE_MOCK ? await mockAnalysis() : await requestAnalysis(text);
     const result = normalizeResult(raw);
-    addAnalysis(text, result);
-    renderResult(result);
+    const entry = addAnalysis(text, result);
+    renderResult(result, entry);
     renderHistory();
     toast('分析完成');
   } catch (error) {
@@ -235,8 +256,9 @@ function mockAnalysis() {
   });
 }
 
-function renderResult(result) {
+function renderResult(result, entry = null) {
   renderedResult = result;
+  renderedEntry = entry;
   const level = IMPORTANCE[result.importance] || IMPORTANCE.medium;
   const actions = result.actions.map((action, index) => `
     <div class="action">
@@ -297,7 +319,113 @@ function renderResult(result) {
       ${result.materials.length ? `<div><p class="field-label">准备材料</p><div class="tags">${result.materials.map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join('')}</div></div>` : ''}
       ${result.risks.length ? `<div><p class="field-label">错过的影响</p>${result.risks.map((item) => `<p class="risk">${escapeHtml(item)}</p>`).join('')}</div>` : ''}
       ${result.actions.length ? `<button class="primary block-btn" id="add-all-actions" type="button">全部加入提醒（${result.actions.length}）</button>` : ''}
+      ${entry ? renderChatSection(entry) : ''}
     </article>`;
+}
+
+function renderChatSection(entry) {
+  const messages = entry.chat || [];
+  return `
+    <div class="chat">
+      <p class="field-label">继续问 AI <span class="muted small">· 回答只作参考</span></p>
+      <div class="chat-list" id="chat-list">${renderChatMessages(messages)}</div>
+      <div class="chat-chips" id="chat-chips" ${messages.length ? 'hidden' : ''}>
+        <button type="button" data-chat-chip="这件事我该先做什么">这件事我该先做什么</button>
+        <button type="button" data-chat-chip="时间上怎么安排比较稳">时间上怎么安排比较稳</button>
+        <button type="button" data-chat-chip="有什么容易漏掉的细节">有什么容易漏掉的细节</button>
+      </div>
+      <div class="chat-input">
+        <input id="chat-text" type="text" maxlength="200" placeholder="追问这条通知…" autocomplete="off" enterkeyhint="send" aria-label="追问 AI">
+        <button class="primary chat-send" type="button" data-chat-send aria-label="发送">发送</button>
+      </div>
+    </div>`;
+}
+
+function renderChatMessages(messages) {
+  return messages.map((item) => `
+    <div class="bubble ${item.role === 'user' ? 'user' : 'ai'}">${escapeHtml(item.text)}</div>`).join('');
+}
+
+async function sendChat() {
+  if (chatBusy || !renderedEntry) return;
+  const input = $('#chat-text');
+  const question = input?.value.trim();
+  if (!question) return;
+  if (!state.settings.apiKey && !USE_MOCK) {
+    toast('先到设置里填写 DeepSeek API Key');
+    navigateTo('settings');
+    return;
+  }
+  chatBusy = true;
+  input.value = '';
+  await appendChat(renderedEntry.id, { role: 'user', text: question });
+  renderChat(renderedEntry, true);
+
+  try {
+    const answer = USE_MOCK ? await mockChat(question) : await requestChat(renderedEntry, question);
+    await appendChat(renderedEntry.id, { role: 'assistant', text: answer });
+  } catch (error) {
+    const message = error instanceof TypeError ? '网络不可用，检查连接后重试' : error.message;
+    await appendChat(renderedEntry.id, { role: 'assistant', text: message });
+  }
+  renderChat(renderedEntry);
+  chatBusy = false;
+}
+
+function renderChat(entry, pending = false) {
+  const list = $('#chat-list');
+  if (!list) return;
+  list.innerHTML = renderChatMessages(entry.chat || []);
+  if (pending) {
+    list.insertAdjacentHTML('beforeend', '<div class="bubble ai typing">正在想…</div>');
+  }
+  const chips = $('#chat-chips');
+  if (chips) chips.hidden = (entry.chat || []).length > 0;
+  const send = document.querySelector('[data-chat-send]');
+  if (send) send.disabled = chatBusy;
+  list.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function requestChat(entry, question) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45000);
+  try {
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${state.settings.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: buildChatMessages(entry, question),
+        temperature: 0.5,
+        max_tokens: 800,
+        stream: false,
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(errorMessage(response.status));
+    const payload = await response.json().catch(() => null);
+    const content = payload?.choices?.[0]?.message?.content;
+    if (typeof content !== 'string' || !content.trim()) {
+      throw new Error('AI 返回内容为空，稍后再试');
+    }
+    return content.trim().slice(0, 1500);
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('AI 响应超时，稍后再试');
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function mockChat(question) {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(
+      '这是演示回答（浏览器预览模式）。\n\n按通知的截止时间倒推：先把要交的材料列出来，再留出一天缓冲检查。截止前一天把必带材料装好，当天提前到地点，避免卡在打印或签字上。原文没写的细节我不编。'
+    ), 700);
+  });
 }
 
 function addActionReminder(result, action) {
@@ -389,6 +517,6 @@ function onHistoryClick(event) {
   if (!row) return;
   const entry = state.analyses.find((item) => item.id === row.dataset.history);
   if (!entry) return;
-  renderResult(entry.result);
+  renderResult(entry.result, entry);
   $('#analyze-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

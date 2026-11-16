@@ -147,14 +147,24 @@ export function deleteReminder(id) {
 }
 
 export function addAnalysis(text, result) {
-  state.analyses.unshift({
+  const entry = {
     id: uid(),
     at: new Date().toISOString(),
     text,
     result,
-  });
+    chat: [],
+  };
+  state.analyses.unshift(entry);
   state.analyses = state.analyses.slice(0, 12);
   persistAnalyses();
+  return entry;
+}
+
+export async function appendChat(id, message) {
+  const entry = state.analyses.find((item) => item.id === id);
+  if (!entry) return;
+  entry.chat = [...(entry.chat || []), message].slice(-40);
+  await persistAnalyses();
 }
 
 export function removeAnalysis(id) {

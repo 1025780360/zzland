@@ -53,3 +53,41 @@ export function buildMessages(text, now = new Date()) {
     { role: 'user', content: `通知原文：\n"""\n${text}\n"""` },
   ];
 }
+
+// 分析完成后继续追问：带上通知原文、分析结论和前面的对话，让学生直接提问
+export function buildChatMessages(entry, question) {
+  const result = entry.result || {};
+  const brief = {
+    title: result.title,
+    importance: result.importance,
+    importance_reason: result.importance_reason,
+    summary: result.summary,
+    deadline: result.deadline,
+    deadline_text: result.deadline_text,
+    audience: result.audience,
+    location: result.location,
+    actions: result.actions,
+    materials: result.materials,
+    risks: result.risks,
+  };
+  const history = (entry.chat || []).slice(-8);
+  return [
+    {
+      role: 'system',
+      content: `你是熟悉中国高校事务的校园信息分析助理。一位学生已经分析过一条学校通知，现在会围绕这条通知追问。用户背景（固定）：${USER_PROFILE}。
+
+回答规则：
+- 用"你"直接称呼这位学生，先给结论，再给具体做法。
+- 结合这位学生的专业、课程和中俄合作项目背景，不泛泛而谈。
+- 时间安排、待办顺序这类问题要具体，能给日期就给日期。
+- 只依据通知原文和下面的分析结论回答，不编造通知里没有的信息；拿不准就直说"原文没写"。
+- 回答控制在 6 句以内或一个短列表，用中文，不要 Markdown 标题和代码块。`,
+    },
+    {
+      role: 'user',
+      content: `通知原文：\n"""\n${String(entry.text || '').slice(0, 2000)}\n"""\n\n分析结论（JSON）：\n${JSON.stringify(brief)}`,
+    },
+    ...history.map((item) => ({ role: item.role, content: item.text })),
+    { role: 'user', content: question },
+  ];
+}

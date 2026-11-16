@@ -535,6 +535,52 @@ textarea:focus, input:focus, select:focus { border-color: var(--accent); backgro
 .history-item { cursor: pointer; }
 .history-item .item-title { font-size: 15px; }
 
+/* 分析后的追问 */
+.chat {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 16px;
+}
+.chat-list { display: flex; flex-direction: column; gap: 8px; }
+.chat-list:empty { display: none; }
+.bubble {
+  max-width: 88%;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.bubble.user {
+  align-self: flex-end;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-bottom-right-radius: 4px;
+}
+.bubble.ai {
+  align-self: flex-start;
+  background: var(--raised);
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
+}
+.bubble.typing { color: var(--muted); font-size: 13px; }
+.chat-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.chat-chips[hidden] { display: none; }
+.chat-chips button {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.chat-chips button:active { background: var(--raised); }
+.chat-input { display: flex; gap: 8px; margin-top: 12px; }
+.chat-input input { flex: 1; min-width: 0; width: auto; font-size: 16px; }
+.chat-send { flex: none; padding: 10px 16px; }
+.chat-send[disabled] { opacity: .55; }
+
 /* 设置 */
 .setting-card { padding: 0; overflow: hidden; }
 .setting-row {
