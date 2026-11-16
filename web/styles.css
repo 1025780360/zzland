@@ -197,7 +197,12 @@ svg { stroke-width: 1.5; }
   from { opacity: 0; transform: translateY(3px); }
 }
 
-.signing-line { font-size: 12px; line-height: 1.6; color: var(--muted); font-variant-numeric: tabular-nums; }
+.signing-line { display: flex; align-items: center; gap: 10px; font-size: 12px; line-height: 1.6; color: var(--muted); font-variant-numeric: tabular-nums; }
+.signing-bar { flex: 1; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.signing-bar i { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width 400ms var(--ease); }
+.signing-bar.warn i { background: var(--warn); }
+.signing-bar.danger i { background: var(--danger); }
+.signing-pct { flex: none; font-weight: 500; color: var(--ink-2); }
 
 /* 统计卡：只放标签和数字 */
 .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

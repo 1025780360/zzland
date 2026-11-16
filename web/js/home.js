@@ -1,7 +1,7 @@
 import { state, openReminders } from './store.js';
 import { isNative } from './bridge.js';
 import { icons } from './icons.js';
-import { $, $$, escapeHtml, fmtDateTime, dueLabel, startOfDay, pluralDays } from './utils.js';
+import { $, $$, escapeHtml, fmtDateTime, dueLabel, startOfDay } from './utils.js';
 
 let navigateTo = () => {};
 let timer = 0;
@@ -124,22 +124,25 @@ function renderSigning() {
     return;
   }
 
-  const { days, hours, hoursTotal } = pluralDays(remain);
-  const timeText = days > 0
-    ? `${days} 天 ${hours} 小时`
-    : `${hoursTotal} 小时 ${Math.floor((remain % 3600000) / 60000)} 分`;
-  line.textContent = `自签还剩 ${timeText} · ${fmtDateTime(info.expiresAt)} 到期`;
-
-  if (hoursTotal <= 24) {
+  if (remain <= 24 * 3600000) {
     chip.className = 'chip danger';
     chip.textContent = '紧急';
-  } else if (hoursTotal <= 72) {
+  } else if (remain <= 72 * 3600000) {
     chip.className = 'chip warn';
     chip.textContent = '注意';
   } else {
     chip.className = 'chip ok';
     chip.textContent = '正常';
   }
+
+  // 剩余占比按「安装时间 → 到期时间」算；旧包没有安装时间就按 7 天有效期估
+  const installed = new Date(info.installedAt || '').getTime();
+  const span = Number.isFinite(installed) && expires > installed ? expires - installed : 7 * 86400000;
+  const percent = Math.max(1, Math.min(100, Math.round((remain / span) * 100)));
+  const tone = chip.classList.contains('danger') ? 'danger' : chip.classList.contains('warn') ? 'warn' : 'ok';
+  line.innerHTML = `
+    <div class="signing-bar ${tone}" role="progressbar" aria-label="签名剩余时长" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><i style="width:${percent}%"></i></div>
+    <span class="signing-pct">${percent}%</span>`;
 }
 
 function renderStats() {
