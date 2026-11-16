@@ -368,8 +368,8 @@ async function sendChat() {
     const message = error instanceof TypeError ? '网络不可用，检查连接后重试' : error.message;
     await appendChat(renderedEntry.id, { role: 'assistant', text: message });
   }
-  renderChat(renderedEntry);
   chatBusy = false;
+  renderChat(renderedEntry);
 }
 
 function renderChat(entry, pending = false) {

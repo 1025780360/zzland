@@ -368,7 +368,11 @@ textarea:focus, input:focus, select:focus { border-color: var(--accent); backgro
 
 .form { display: flex; flex-direction: column; gap: 12px; }
 .form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* 手机上日期时间控件最小宽度较大，两列会挤在一起，够宽才分两列 */
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+@media (min-width: 420px) {
+  .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 /* 待办搜索与筛选 */
 .filter-bar { display: flex; flex-direction: column; gap: 8px; }
