@@ -18,11 +18,22 @@ function navigate(name) {
   $$('.tab').forEach((tab) => {
     tab.classList.toggle('active', tab.dataset.view === name);
   });
+  movePill();
   const section = $(`#view-${name}`);
   $('#page-title').textContent = section?.dataset.title || '校园助手';
   $('#today-line').hidden = name !== 'home';
   window.scrollTo({ top: 0, behavior: 'instant' });
   renderAll();
+}
+
+// 选中的白色胶囊在玻璃条里滑到当前 tab
+function movePill() {
+  const pill = $('.tab-pill');
+  const tab = $('.tab.active');
+  if (!pill || !tab) return;
+  pill.style.width = `${tab.offsetWidth}px`;
+  pill.style.height = `${tab.offsetHeight}px`;
+  pill.style.transform = `translate(${tab.offsetLeft}px, ${tab.offsetTop}px)`;
 }
 
 function renderAll() {
@@ -33,6 +44,7 @@ function bindNav() {
   $$('.tab').forEach((tab) => {
     tab.addEventListener('click', () => navigate(tab.dataset.view));
   });
+  window.addEventListener('resize', movePill);
   $('#refresh-btn').addEventListener('click', (event) => {
     const button = event.currentTarget;
     if (button.classList.contains('spin')) return;
