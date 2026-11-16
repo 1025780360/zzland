@@ -121,16 +121,14 @@
 
         <form class="card form" id="reminder-form" hidden>
           <label>标题<input id="r-title" maxlength="80" required placeholder="例如：交物理实验报告"></label>
-          <div class="grid2">
-            <label>截止时间<input id="r-due" type="datetime-local"></label>
-            <label>重要度
-              <select id="r-priority">
-                <option value="high">高</option>
-                <option value="normal" selected>普通</option>
-                <option value="low">低</option>
-              </select>
-            </label>
-          </div>
+          <label>截止时间<input id="r-due" type="text" placeholder="如 11月20日 14:00（选填）" autocomplete="off"></label>
+          <label>重要度
+            <select id="r-priority">
+              <option value="high">高</option>
+              <option value="normal" selected>普通</option>
+              <option value="low">低</option>
+            </select>
+          </label>
           <label>备注<input id="r-note" maxlength="200" placeholder="选填"></label>
           <div class="row end">
             <button class="ghost-btn" id="r-cancel" type="button">取消</button>

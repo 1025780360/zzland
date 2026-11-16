@@ -17,17 +17,23 @@ export function init() {
     event.preventDefault();
     const title = $('#r-title').value.trim();
     if (!title) return;
-    const dueValue = $('#r-due').value;
+    let due = null;
+    try {
+      due = parseDue($('#r-due').value);
+    } catch (error) {
+      toast(error.message);
+      return;
+    }
     addReminder({
       title,
-      due: dueValue ? new Date(dueValue) : null,
+      due,
       priority: $('#r-priority').value,
       note: $('#r-note').value,
     });
     closeForm();
     resetFilters();
     render();
-    toast(dueValue ? '已加入提醒，并安排好通知' : '已加入提醒');
+    toast(due ? '已加入提醒，并安排好通知' : '已加入提醒');
   });
   $('#r-search').addEventListener('input', (event) => {
     query = event.target.value.trim();
@@ -51,6 +57,40 @@ export function init() {
   $('#reminder-list').addEventListener('click', onListClick);
   syncFilterUI();
   render();
+}
+
+// 截止时间用文字输入：WKWebView 兼容窗口里的原生日期控件会撑破布局
+// 支持 11月20日 14:00、11-20 14:00、2026-11-20 14:00、今天/明天/后天 14:00
+function parseDue(text) {
+  const raw = text.trim().replace(/\s+/g, ' ');
+  if (!raw) return null;
+  const now = new Date();
+
+  const relative = raw.match(/^(今天|明天|后天)(?: ?(\d{1,2})[:：点时](\d{1,2})?分?)?$/);
+  if (relative) {
+    const date = new Date(now);
+    date.setDate(date.getDate() + { 今天: 0, 明天: 1, 后天: 2 }[relative[1]]);
+    const hour = relative[2] === undefined ? 23 : Number(relative[2]);
+    const minute = relative[2] === undefined ? 59 : Number(relative[3] || 0);
+    if (hour > 23 || minute > 59) throw new Error('时间要写成 14:30 这样');
+    date.setHours(hour, minute, 0, 0);
+    return date;
+  }
+
+  const absolute = raw.match(/^(?:(\d{4})[-/.年])?(\d{1,2})[-/.月](\d{1,2})日?(?: ?(\d{1,2})[:：点时](\d{1,2})?分?)?$/);
+  if (!absolute) throw new Error('时间没看懂，写成 11月20日 14:00 这样');
+  const year = absolute[1] ? Number(absolute[1]) : now.getFullYear();
+  const month = Number(absolute[2]);
+  const day = Number(absolute[3]);
+  const hour = absolute[4] === undefined ? 23 : Number(absolute[4]);
+  const minute = absolute[4] === undefined ? 59 : Number(absolute[5] || 0);
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) {
+    throw new Error('时间没看懂，写成 11月20日 14:00 这样');
+  }
+  const date = new Date(year, month - 1, day, hour, minute, 0, 0);
+  if (date.getMonth() !== month - 1 || date.getDate() !== day) throw new Error('这个日期不存在，检查一下');
+  if (!absolute[1] && date.getTime() < now.getTime() - 86400000) date.setFullYear(year + 1);
+  return date;
 }
 
 function resetFilters() {

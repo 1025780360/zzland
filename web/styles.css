@@ -368,10 +368,6 @@ textarea:focus, input:focus, select:focus { border-color: var(--accent); backgro
 
 .form { display: flex; flex-direction: column; gap: 12px; }
 .form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
-/* 日期时间控件在 WKWebView 里有很大的最小宽度，并排必挤，统一上下排列 */
-.grid2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
-.grid2 > label { min-width: 0; }
-
 /* 待办搜索与筛选 */
 .filter-bar { display: flex; flex-direction: column; gap: 8px; }
 .search-field { position: relative; }
@@ -876,7 +872,6 @@ body.has-watermark .app { padding-bottom: calc(154px + env(safe-area-inset-botto
     padding-right: calc(12px + env(safe-area-inset-right));
   }
   .topbar h1 { font-size: 26px; }
-  .grid2 { grid-template-columns: 1fr; }
   .setting-row { gap: 10px; padding: 14px 12px; }
   .setting-ico { width: 28px; height: 28px; }
   .date-badge { width: 32px; }

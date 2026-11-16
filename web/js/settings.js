@@ -8,7 +8,7 @@ import { requestNotifyPermission, isNative, signingError, getAppInfo, getScreenI
 import { $, fmtDateTime, toast } from './utils.js';
 import { layoutInfo } from './layout.js';
 
-const WEB_VERSION = '2026-11-16.28';
+const WEB_VERSION = '2026-11-16.29';
 let clearArmed = false;
 let nativeInfo = null;
 let loadingNative = false;
