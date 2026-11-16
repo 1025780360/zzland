@@ -99,6 +99,8 @@ async function main() {
   clipboard.init({ navigate });
   onChange(renderAll);
   navigate('home');
+  // iOS Safari 不认 user-scalable=no，捏合手势直接拦掉
+  document.addEventListener('gesturestart', (event) => event.preventDefault());
 }
 
 main();

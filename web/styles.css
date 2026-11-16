@@ -32,7 +32,7 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; touch-action: pan-x pan-y; }
 body { min-height: 100dvh; overflow-x: hidden; }
 ::selection { background: var(--accent-soft); }
 
